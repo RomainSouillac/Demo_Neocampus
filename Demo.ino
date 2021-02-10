@@ -352,7 +352,6 @@ void setup() {
   delay(500);
   display.clearDisplay();
   delay(2000);
-  delay(3000);
   counter = 0;
   timeClient.begin();
   screen_mode = Date;
