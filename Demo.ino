@@ -396,6 +396,12 @@ void loop() {
       // Extract time
       timeStamp = formattedDate.substring(splitT+1, formattedDate.length()-1);
       DatePlusTime = dayStamp+timeStamp;
+      display.clearDisplay();
+      display.setTextSize(2);
+      display.setTextColor(SSD1306_WHITE);
+      display.setCursor(40, 0);
+      display.cp437(true);
+      display.print(DatePlusTime);
       //Mettre a jour la date et l'afficher
       break;
     case Temperature:
