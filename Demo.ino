@@ -1,3 +1,4 @@
+
 #include <WiFiManager.h>
 #include <HTTPClient.h>
 #include <PubSubClient.h>
@@ -18,10 +19,10 @@
 
 #define DEFT_LOGIN "test"
 #define DEFT_PWD "test"
-#define DEFT_SERVER "neocampus.univ-tlse3.fr"
-#define DEFT_TOPIC "TestTopic/screen"
-#define DEFT_TOPIC_CLASS "TestTopic/screen/command"
-#define DEFT_PORT 8883
+#define DEFT_SERVER "195.220.53.10"
+#define DEFT_TOPIC "testTopic/screen"
+#define DEFT_TOPIC_CLASS "testTopic/screen/command"
+#define DEFT_PORT 10483
 
 
 #define SDA1 21
@@ -55,8 +56,7 @@ WiFiManager wm;
 HTTPClient httpsClient;
 const char* root_ca = NULL;
 char url [90];
-const char* config_server = "https://sensocampus.univ-tlse3.fr/device/config";
-
+const char* config_server = ""; //"https://sensocampus.univ-tlse3.fr/device/config";
 /* JSon Vars */
 StaticJsonDocument<200> JSON_cred;
 StaticJsonDocument<1000> JSON_conf;/*
@@ -70,7 +70,7 @@ int cred_port = JSON_cred["port"];*/
 const char* _cacert = NULL;
 const char* _clicert = nullptr;
 const char* _clikey = nullptr;
-WiFiClientSecure *wcsClient = new WiFiClientSecure;
+WiFiClient *wcsClient = new WiFiClient;
 PubSubClient client(*wcsClient);
 
 //I2C bus
@@ -96,7 +96,7 @@ void get_MAC(){
   Serial.print("ESP BOARD MAC Address: ");
   WiFi.macAddress(macAddr);
   snprintf( strMacAddr, sizeof(strMacAddr), "%02X:%02X:%02X:%02X:%02X:%02X", macAddr[0],macAddr[1],macAddr[2],macAddr[3],macAddr[4],macAddr[5]);
-  snprintf(ssid, sizeof(ssid),"%s%02X:%02X","m2_Demo",macAddr[4], macAddr[5]);
+  snprintf(ssid, sizeof(ssid),"%s%02X:%02X","m2_Demo_",macAddr[4], macAddr[5]);
   Serial.println(strMacAddr);
   Serial.println(ssid);
   //snprintf(url, sizeof(url), "%s%s","https://sensocampus.univ-tlse3.fr/device/credentials?mac=",strMacAddr);
@@ -105,7 +105,7 @@ void get_MAC(){
 }
 
 void set_WiFi(){
-  wm.resetSettings();
+  //wm.resetSettings();
   WiFi.mode(WIFI_STA);
   if(!wm.autoConnect(ssid,pwd))
     Serial.println("Conn Doomed");
@@ -113,42 +113,6 @@ void set_WiFi(){
     Serial.println("Conn est");
   }
 }
-/*
-void get_credentials(){
-  Serial.println("getting credentials");
-  httpsClient.begin(url,root_ca);
-    int httpCode = httpsClient.GET();
-    if (httpCode > 0) { //Check for the returning code
-      String payload = httpsClient.getString();
-      Serial.println(httpCode);
-      Serial.println(payload);
-      /* Unboxing credentials from cred server */
-      /*DeserializationError error = deserializeJson(JSON_cred, payload);
-      Serial.println("Credentials requested from auth");
-      // Test if parsing succeeds.
-      if (error) {
-        Serial.print(F("deserializeJson() failed: "));
-        Serial.println(error.c_str());
-        return;
-      }
-      
-      /* Saving credentials to LittleFS */
-      /*File file = LittleFS.open(CREDENTIALS, "w");
-      if (!file) {
-        Serial.println("Error opening file for writing");
-        return;
-      }
-      if (serializeJson(JSON_cred, file) == 0) {
-        Serial.println(F("Failed to write to file"));
-      } else {
-        Serial.println(F("Credentials successfully saved"));
-      }
-      file.close();
-    }else {
-      Serial.println(F("Error on HTTPs request"));
-    }
-    httpsClient.end();
-}*/
 
 void get_conf(){
   Serial.println("Attempting to get conf");
@@ -187,63 +151,65 @@ void get_conf(){
    httpsClient.end();
 }
 void callback(char* topic, byte* payload, unsigned int length){
-  // byte* p = (byte*)malloc(length);
-  // memcpy(p, payload,length);
-  String message;
+  //byte* p = (byte*)malloc(length);
+  //memcpy(p, payload,length);
+  //String message;
   Serial.print("Message arrived [");
   Serial.print(topic);
   Serial.print("] ");
   if(strncmp(topic,DEFT_TOPIC_CLASS,size_t(sizeof(DEFT_TOPIC_CLASS)))==0){
     Serial.println(F(": message received"));
-    for (int i=0;i<length;i++) {
-      Serial.print((char)payload[i]);
-      message += ((char)payload[i]);
-    }
-   if (message == "Change"){
+    //for (int i=0;i<length;i++) {
+    //  Serial.print((char)payload[i]);
+     // message += ((char)payload[i]);
+    //}
+    //message +='\0';
+    Serial.println(length);
+   if (strncmp((char*)payload,"Change",length)==0){
     //TODO CHANGER L'AFFICHAGE
     switch(screen_mode){
       case Date:
+      Serial.println(F("Changer pour temp"));
         screen_mode = Temperature;
         break;
       case Temperature:
+      Serial.println(F("Changer pour Lum"));
         screen_mode = Luminosity;
         break;
       case Luminosity:
+      Serial.println(F("Changer pour Date"));
         screen_mode = Date;
         break;
       default:
         log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
     }
+   }else{
+    Serial.println(F("Received a non Change Order message"));
    }
   }else{
     Serial.println(F("Received a non-airquality related message"));
   }
+  //free(p);
 }
 
-void mqtts(){
-wcsClient->setCACert(_cacert);
-wcsClient->setCertificate(_clicert);
-wcsClient->setPrivateKey(_clikey);
+void mqtt(){
   Serial.println("Attempting to get conf");
   if(wcsClient) {
-    const char* cred_login = JSON_cred["login"];
-    const char* cred_pwd = JSON_cred["password"];
-    const char*  conf_server = JSON_cred["server"];
-    int conf_port = JSON_cred["port"]; 
-    //client.setServer(conf_server, conf_port);
+    Serial.println(DEFT_SERVER);
+    Serial.println(DEFT_PORT);
     client.setServer(DEFT_SERVER, DEFT_PORT);
+    client.setCallback(callback);
     //if(client.connect(conf_server,cred_login, cred_pwd)){
-      if(client.connect(DEFT_SERVER, DEFT_LOGIN, DEFT_PWD)){
-      Serial.println(F("Client connected"));
-      if(!client.subscribe(DEFT_TOPIC_CLASS)){
-        Serial.println("Failed to subscribe to ");
-        Serial.println(DEFT_TOPIC_CLASS);
-      }else{
-        Serial.println("subscribing done to ");
-        Serial.println(DEFT_TOPIC_CLASS);
-      }
-      client.setCallback(callback);
-    }else
+      if(client.connect("toto", DEFT_LOGIN, DEFT_PWD)){
+        Serial.println(F("Client connected"));
+        if(!client.subscribe(DEFT_TOPIC_CLASS)){
+          Serial.println("Failed to subscribe to ");
+          Serial.println(DEFT_TOPIC_CLASS);
+        }else{
+          Serial.println("subscribing done to ");
+          Serial.println(DEFT_TOPIC_CLASS);
+        }
+      }else
       Serial.println(F("MQTT connection failed."));
   }else{
     Serial.println("Failed to set up WiFiClientSecure");
@@ -281,18 +247,18 @@ void scanner ()
     Wire.beginTransmission (i);          // Begin I2C transmission Address (i)
     if (Wire.endTransmission () == 0)  // Receive 0 = success (ACK response) 
     {
-      Serial.print ("Found address: ");
-      Serial.print (i, DEC);
-      Serial.print (" (0x");
-      Serial.print (i, HEX);    
-      Serial.println (")");
+      Serial.print("Found address: "); Serial.print("0x"); Serial.println(i, HEX); 
       address_devices[count] = i;
       count++;
       if (i == 0x4B or i == 0x4A){
         lumSensor = Max44009((i,HEX),SDA,SCL);
       }
-      if (i == 0x18 ){
+      if (i == 0x1F ){
+        Serial.println ("Found temperature sensor");
         tempSensor = Adafruit_MCP9808();
+          tempSensor.begin((i,HEX));
+          delay(500);
+          tempSensor.setResolution((3,HEX));
       }
     }
   }
@@ -318,31 +284,10 @@ void setup() {
   }
   get_MAC();
   set_WiFi();
-  serializeJsonPretty(JSON_cred,Serial);
-  if(!LITTLEFS.exists(CONFIG))
-    get_conf(); 
-  else{
-  /* Yes i do */
-    File file = LITTLEFS.open(CONFIG);
-    if(!file){
-      Serial.println("Failed to open config for reading");
-      return;
-    }
-  /* config is stored as StaticJsonDocument, let's deserialize it*/
-    DeserializationError error = deserializeJson(JSON_conf, file);
-  // Test if parsing succeeds.
-    if (error) {
-      Serial.print(F("deserializeJson() failed: "));
-      Serial.println(error.c_str());
-      return;
-    }
-    file.close();
-    Serial.println("Internal config found");
-    serializeJsonPretty(JSON_conf,Serial);
-  }
-  mqtts();
+  mqtt();
+  scanner();
   I2Cone.begin(SDA1,SCL1,400000); // SDA pin 21, SCL pin 22
-  //PRINT LOGO neocampus here
+  // TODO PRINT LOGO neocampus here
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
     Serial.println(F("SSD1306 allocation failed"));
@@ -352,6 +297,7 @@ void setup() {
   delay(500);
   display.clearDisplay();
   delay(2000);
+  display.display();
   counter = 0;
   timeClient.begin();
   screen_mode = Date;
@@ -370,65 +316,78 @@ void loop() {
   counter++;
   Serial.print(".");
   Serial.flush();
-  if (counter == 10) {
-    boolean rc = client.publish(DEFT_TOPIC_CLASS, "Change");
-    counter = 0;
-  }
-  if(!client.connected()){
-    Serial.println(F("Connection lost, reconnecting... "));
-    reconnect();
-  }
+  
+  if (counter == 10) {  
+      if(!client.connected()){
+        Serial.println(F("Connection lost, reconnecting... "));
+        reconnect();
+      }   
+      boolean rc = client.publish(DEFT_TOPIC_CLASS, "Change"); 
+      delay(500);
+      switch(screen_mode){
+        case Date:
+          //TODO check if summer time => UTC+2 not UTC+1
+          timeClient.update();
+          splitT = formattedDate.indexOf("T");
+          dayStamp = formattedDate.substring(0, splitT);
+          // Extract time
+          timeStamp = formattedDate.substring(splitT+1, formattedDate.length()-1);
+          DatePlusTime = dayStamp+timeStamp;
+          display.clearDisplay();
+          display.setTextSize(2);
+          display.setTextColor(SSD1306_WHITE);
+          display.setCursor(40, 0);
+          display.cp437(true);
+          display.print(DatePlusTime);
+          //Mettre a jour la date et l'afficher
+          break;
+          
+        case Temperature:
+          //Mettre a jour la temperature et l'afficher
+          Serial.println("wake up MCP9808.... "); // wake up MCP9808 - power consumption ~200 mikro Ampere
+          tempSensor.shutdown_wake(1);   // wake up, ready to read!
+          // Read and print out the temperature, also shows the resolution mode used for reading.
+          Serial.print("Resolution in mode: ");
+          Serial.println (tempSensor.getResolution());
+          temp = tempSensor.readTempC();
+          //float f = tempSensor.readTempF();
+          Serial.print("Temp: "); Serial.print(temp); Serial.println("*C"); 
+          //Serial.print(f, 4); Serial.println("*F.");
+          delay(2000);
+          Serial.println("Shutdown MCP9808.... ");
+          tempSensor.shutdown_wake(0); // shutdown MSP9808 - power consumption ~0.1 mikro Ampere, stops temperature sampling
+          Serial.println("");
+          delay(200);
+        Serial.println(temp);
+          display.clearDisplay();
+          display.setTextSize(2);
+          display.setTextColor(SSD1306_WHITE);
+          display.setCursor(40, 0);
+          display.cp437(true);
+          display.println(F("Temp:"));
+          display.print(temp);
+          display.println(F(" C"));
+          break;
+        case Luminosity:
+          //Mettre a jour la luminosité et l'afficher
+          
+          Serial.println("About to get the luminosity");
+          lux = lumSensor.getLux();
+          Serial.println("Got the luminosity");
+        Serial.println(lux);
+          display.drawLine(0, 32, 43, 32, WHITE);
+          display.drawLine(71, 32, 120, 32, WHITE);
+          display.setCursor(40,34);
+          display.println(F("Lum:"));
+          display.print(lux);
+          display.println(F(" lux"));
+          display.display();
+          break;
+        default:
+          log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
+      }
+      Serial.println(); 
+      counter = 0;
+    }
   client.loop();
-  scanner();
-  switch(screen_mode){
-    case Date:
-      //TODO check if summer time => UTC+2 not UTC+1
-      timeClient.update();
-      /*dateNTP = String(daysOfTheWeek[timeClient.getDay()]);
-      dateNTP += ", ";
-      dateNTP += String(timeClient.getHours());
-      dateNTP += ":";
-      dateNTP += String(timeClient.getMinutes());
-      dateNTP += ":";
-      dateNTP += String(timeClient.getSeconde());*/
-      splitT = formattedDate.indexOf("T");
-      dayStamp = formattedDate.substring(0, splitT);
-      // Extract time
-      timeStamp = formattedDate.substring(splitT+1, formattedDate.length()-1);
-      DatePlusTime = dayStamp+timeStamp;
-      display.clearDisplay();
-      display.setTextSize(2);
-      display.setTextColor(SSD1306_WHITE);
-      display.setCursor(40, 0);
-      display.cp437(true);
-      display.print(DatePlusTime);
-      //Mettre a jour la date et l'afficher
-      break;
-    case Temperature:
-      //Mettre a jour la temperature et l'afficher
-      temp = tempSensor.readTempC();
-      display.clearDisplay();
-      display.setTextSize(2);
-      display.setTextColor(SSD1306_WHITE);
-      display.setCursor(40, 0);
-      display.cp437(true);
-      display.println(F("Temp:"));
-      display.print(temp);
-      display.println(F(" C"));
-      break;
-    case Luminosity:
-      //Mettre a jour la luminosité et l'afficher
-      lux = lumSensor.getLux();
-      display.clearDisplay();
-      display.setTextSize(2);
-      display.setCursor(40,34);
-      display.println(F("Lum:"));
-      display.print(lux);
-      display.println(F(" lux"));
-      display.display();
-      break;
-    default:
-      log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
-  }
-  Serial.println(); 
 }
