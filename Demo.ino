@@ -9,6 +9,9 @@
 #include <Max44009.h>
 #include <Adafruit_MCP9808.h>
 #include "neocampus_debug.h"
+#include <SPI.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 
 #define CREDENTIALS "/cred.txt"
 #define CONFIG "/conf.txt"
@@ -18,7 +21,6 @@
 #define DEFT_SERVER "neocampus.univ-tlse3.fr"
 #define DEFT_TOPIC "TestTopic/screen"
 #define DEFT_TOPIC_CLASS "TestTopic/screen/command"
-
 #define DEFT_PORT 8883
 
 
@@ -27,6 +29,11 @@
 
 //Screen address
 #define SSD1306 0x3c 
+//Screen setup
+#define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
+#define SCREEN_ADDRESS 0x3C
+Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
+
 
 //enum mode screen
 typedef enum {
@@ -362,6 +369,16 @@ void setup() {
   screen_mode = Date;
   counter = 0;
   timeClient.begin();
+
+  // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
+  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }
+  display.display();
+  delay(500);
+  display.clearDisplay();
+  delay(2000);
   
 }
 void loop() {
@@ -370,6 +387,9 @@ void loop() {
   String dayStamp;
   String timeStamp;
   String DatePlusTime;
+  int splitT;
+  float temp;
+  float lux;
   delay(1000);
   counter++;
   Serial.print(".");
@@ -395,7 +415,7 @@ void loop() {
       dateNTP += String(timeClient.getMinutes());
       dateNTP += ":";
       dateNTP += String(timeClient.getSeconde());*/
-      int splitT = formattedDate.indexOf("T");
+      splitT = formattedDate.indexOf("T");
       dayStamp = formattedDate.substring(0, splitT);
       // Extract time
       timeStamp = formattedDate.substring(splitT+1, formattedDate.length()-1);
@@ -404,11 +424,26 @@ void loop() {
       break;
     case Temperature:
       //Mettre a jour la temperature et l'afficher
-      float temp = tempSensor.readTempC();
+      temp = tempSensor.readTempC();
+      display.clearDisplay();
+      display.setTextSize(2);
+      display.setTextColor(SSD1306_WHITE);
+      display.setCursor(40, 0);
+      display.cp437(true);
+      display.println(F("Temp:"));
+      display.print(temp);
+      display.println(F(" C"));
       break;
     case Luminosity:
       //Mettre a jour la luminosité et l'afficher
-      float lux = lumSensor.getLux();
+      lux = lumSensor.getLux();
+      display.drawLine(0, 32, 43, 32, WHITE);
+      display.drawLine(71, 32, 120, 32, WHITE);
+      display.setCursor(40,34);
+      display.println(F("Lum:"));
+      display.print(lux);
+      display.println(F(" lux"));
+      display.display();
       break;
     default:
       log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
