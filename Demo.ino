@@ -419,8 +419,8 @@ void loop() {
     case Luminosity:
       //Mettre a jour la luminosité et l'afficher
       lux = lumSensor.getLux();
-      display.drawLine(0, 32, 43, 32, WHITE);
-      display.drawLine(71, 32, 120, 32, WHITE);
+      display.clearDisplay();
+      display.setTextSize(2);
       display.setCursor(40,34);
       display.println(F("Lum:"));
       display.print(lux);
