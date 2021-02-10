@@ -318,28 +318,6 @@ void setup() {
   }
   get_MAC();
   set_WiFi();
-  /* Do I have my credentials? */
-  /*if(!LittleFS.exists(CREDENTIALS))
-    get_credentials();
-  else{*/
-  /* Yes i do */
-    /*File file = LittleFS.open(CREDENTIALS);
-    if(!file){
-      Serial.println("Failed to open file for reading");
-      return;
-    }*/
-  /* credentials are stored as StaticJsonDocument, let's deserialize it*/
-    /*DeserializationError error = deserializeJson(JSON_cred, file);
-  // Test if parsing succeeds.
-    if (error) {
-      Serial.print(F("deserializeJson() failed: "));
-      Serial.println(error.c_str());
-      return;
-    }
-    file.close();
-    Serial.println("Internal credentials found");
-  } 
-  Serial.println("I Have those credentials: ");*/
   serializeJsonPretty(JSON_cred,Serial);
   if(!LITTLEFS.exists(CONFIG))
     get_conf(); 
@@ -365,11 +343,6 @@ void setup() {
   mqtts();
   I2Cone.begin(SDA1,SCL1,400000); // SDA pin 21, SCL pin 22
   //PRINT LOGO neocampus here
-  delay(3000);
-  screen_mode = Date;
-  counter = 0;
-  timeClient.begin();
-
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
     Serial.println(F("SSD1306 allocation failed"));
@@ -379,6 +352,10 @@ void setup() {
   delay(500);
   display.clearDisplay();
   delay(2000);
+  delay(3000);
+  counter = 0;
+  timeClient.begin();
+  screen_mode = Date;
   
 }
 void loop() {
