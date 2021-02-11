@@ -20,8 +20,8 @@
 #define DEFT_LOGIN "test"
 #define DEFT_PWD "test"
 #define DEFT_SERVER "195.220.53.10"
-#define DEFT_TOPIC "testTopic/screen"
-#define DEFT_TOPIC_CLASS "testTopic/screen/command"
+#define DEFT_TOPIC "testTopic/display"
+#define DEFT_TOPIC_CLASS "testTopic/display/command"
 #define DEFT_PORT 10483
 
 
@@ -327,6 +327,7 @@ void loop() {
           // Extract time
           timeStamp = formattedDate.substring(splitT+1, formattedDate.length()-1);
           DatePlusTime = dayStamp+timeStamp;
+          Serial.println("Teh Date is : ");
           Serial.println(dayStamp); Serial.println(timeStamp);
           display.clearDisplay();
           display.setTextSize(2);
