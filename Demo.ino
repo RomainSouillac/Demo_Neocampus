@@ -84,13 +84,19 @@ WiFiUDP ntpUDP;
 //3600 for UTC+1
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600);
 
-int counter;
-
 //Sensors
 Max44009 lumSensor;
 Adafruit_MCP9808 tempSensor;
 
-
+String formattedDate;
+String dayStamp;
+String timeStamp;
+String DatePlusTime;
+int splitT;
+int counter = 0;
+float temp;
+float lux;
+  
 void get_MAC(){
   Serial.println();
   Serial.print("ESP BOARD MAC Address: ");
@@ -269,6 +275,8 @@ void scanner ()
 
 
 void setup() {
+  Wire.begin();
+  Wire.setClock(50000);
   delay(3000);
   // put your setup code here, to run once:
   Serial.begin(115200);
@@ -298,32 +306,18 @@ void setup() {
   display.clearDisplay();
   delay(2000);
   display.display();
-  counter = 0;
   timeClient.begin();
   screen_mode = Date;
   
 }
 void loop() {
   // put your main code here, to run repeatedly:
-  String formattedDate;
-  String dayStamp;
-  String timeStamp;
-  String DatePlusTime;
-  int splitT;
-  float temp;
-  float lux;
-  delay(1000);
   counter++;
-  Serial.print(".");
-  Serial.flush();
   
-  if (counter == 10) {  
-      if(!client.connected()){
-        Serial.println(F("Connection lost, reconnecting... "));
-        reconnect();
-      }   
-      boolean rc = client.publish(DEFT_TOPIC_CLASS, "Change"); 
-      delay(500);
+  delay(1000);
+  if(counter == 1){
+    Serial.println();
+    delay(500);
       switch(screen_mode){
         case Date:
           //TODO check if summer time => UTC+2 not UTC+1
@@ -333,13 +327,15 @@ void loop() {
           // Extract time
           timeStamp = formattedDate.substring(splitT+1, formattedDate.length()-1);
           DatePlusTime = dayStamp+timeStamp;
+          Serial.println(dayStamp); Serial.println(timeStamp);
           display.clearDisplay();
           display.setTextSize(2);
           display.setTextColor(SSD1306_WHITE);
           display.setCursor(40, 0);
           display.cp437(true);
           display.print(DatePlusTime);
-          //Mettre a jour la date et l'afficher
+          display.display()
+;          //Mettre a jour la date et l'afficher
           break;
           
         case Temperature:
@@ -367,10 +363,12 @@ void loop() {
           display.println(F("Temp:"));
           display.print(temp);
           display.println(F(" C"));
+          display.display();
           break;
+          
         case Luminosity:
           //Mettre a jour la luminosité et l'afficher
-          
+          display.clearDisplay();
           Serial.println("About to get the luminosity");
           lux = lumSensor.getLux();
           Serial.println("Got the luminosity");
@@ -386,8 +384,18 @@ void loop() {
         default:
           log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
       }
-      Serial.println(); 
-      counter = 0;
     }
+      
+  if (counter == 10) {  
+      if(!client.connected()){
+        Serial.println(F("Connection lost, reconnecting... "));
+        reconnect();
+      }   
+      boolean rc = client.publish(DEFT_TOPIC_CLASS, "Change"); 
+      counter = 0;
+  }
   client.loop();
+  
+  Serial.print(".");
+  Serial.flush();
 }
