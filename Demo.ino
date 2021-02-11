@@ -13,6 +13,7 @@
 #include <SPI.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
+#include "time.h"
 
 #define CREDENTIALS "/cred.txt"
 #define CONFIG "/conf.txt"
@@ -83,7 +84,8 @@ enum_mode_print screen_mode;
 WiFiUDP ntpUDP;
 //3600 for UTC+1
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600);
-
+//NTP =====================================================================
+const char* ntpServer = "pool.ntp.org";
 //Sensors
 Max44009 lumSensor;
 Adafruit_MCP9808 tempSensor;
@@ -241,6 +243,18 @@ void reconnect(){
 
 
 
+void printLocalTime()
+{
+  struct tm timeinfo;
+  if(!getLocalTime(&timeinfo)){
+    Serial.println("Failed to obtain time");
+    return;
+  }
+  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
+}
+
+
+
 void scanner ()
 {
   Serial.println ();
@@ -308,6 +322,7 @@ void setup() {
   display.display();
   timeClient.begin();
   screen_mode = Date;
+  configTime(3600, 3600, ntpServer);
   
 }
 void loop() {
@@ -327,6 +342,7 @@ void loop() {
           // Extract time
           timeStamp = formattedDate.substring(splitT+1, formattedDate.length()-1);
           DatePlusTime = dayStamp+timeStamp;
+          printLocalTime();
           Serial.println("Teh Date is : ");
           Serial.println(dayStamp); Serial.println(timeStamp);
           display.clearDisplay();
