@@ -7,7 +7,7 @@
 #include <NTPClient.h>
 #include <WiFiUdp.h>
 #include <LITTLEFS.h>
-#include <Max44009.h>
+#include <MAX44009.h>
 #include <Adafruit_MCP9808.h>
 #include "neocampus_debug.h"
 #include <SPI.h>
@@ -119,7 +119,7 @@ NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600);
 //NTP =====================================================================
 const char* ntpServer = "pool.ntp.org";
 //Sensors
-Max44009 lumSensor;
+MAX44009 lumSensor;
 Adafruit_MCP9808 tempSensor;
 
 String formattedDate;
@@ -325,14 +325,14 @@ void scanner ()
       address_devices[count] = i;
       count++;
       if (i == 0x4B or i == 0x4A){
-        lumSensor = Max44009((i,HEX),SDA,SCL);
+        lumSensor = MAX44009();
       }
       if (i == 0x1F ){
         Serial.println ("Found temperature sensor");
         tempSensor = Adafruit_MCP9808();
           tempSensor.begin((i,HEX));
           delay(500);
-          tempSensor.setResolution((3,HEX));
+          tempSensor.setResolution(MCP9808_RESOLUTION_00625DEG);
       }
     }
   }
@@ -387,8 +387,8 @@ void setup() {
 }
 void loop() {
   // put your main code here, to run repeatedly:
+  float* dataSensor;
   counter++;
-  
   delay(1000);
   if(counter == 1){
     Serial.println();
@@ -408,46 +408,40 @@ void loop() {
           
         case Temperature:
           //Mettre a jour la temperature et l'afficher
-          Serial.println("wake up MCP9808.... "); // wake up MCP9808 - power consumption ~200 mikro Ampere
-          tempSensor.shutdown_wake(1);   // wake up, ready to read!
           // Read and print out the temperature, also shows the resolution mode used for reading.
-          Serial.print("Resolution in mode: ");
-          Serial.println (tempSensor.getResolution());
-          temp = tempSensor.readTempC();
-          //float f = tempSensor.readTempF();
-          Serial.print("Temp: "); Serial.print(temp); Serial.println("*C"); 
-          //Serial.print(f, 4); Serial.println("*F.");
-          delay(2000);
-          Serial.println("Shutdown MCP9808.... ");
-          tempSensor.shutdown_wake(0); // shutdown MSP9808 - power consumption ~0.1 mikro Ampere, stops temperature sampling
-          Serial.println("");
-          delay(200);
-        Serial.println(temp);
-          display.clearDisplay();
-          display.setTextSize(2);
-          display.setTextColor(SSD1306_WHITE);
-          display.setCursor(40, 0);
-          display.cp437(true);
-          display.println(F("Temp:"));
-          display.print(temp);
-          display.println(F(" C"));
-          display.display();
+          if(tempSensor.acquire(dataSensor)){
+            //float f = tempSensor.readTempF();
+            Serial.print("Temp: "); Serial.print(*dataSensor); Serial.println("*C"); 
+            //Serial.print(f, 4); Serial.println("*F.");
+            delay(200);
+            Serial.println(*dataSensor);
+            display.clearDisplay();
+            display.setTextSize(2);
+            display.setTextColor(SSD1306_WHITE);
+            display.setCursor(40, 0);
+            display.cp437(true);
+            display.println(F("Temp:"));
+            display.print(*dataSensor);
+            display.println(F(" C"));
+            display.display();
+          }
           break;
           
         case Luminosity:
           //Mettre a jour la luminosité et l'afficher
           display.clearDisplay();
           Serial.println("About to get the luminosity");
-          lux = lumSensor.getLux();
-          Serial.println("Got the luminosity");
-        Serial.println(lux);
-          display.drawLine(0, 32, 43, 32, WHITE);
-          display.drawLine(71, 32, 120, 32, WHITE);
-          display.setCursor(40,34);
-          display.println(F("Lum:"));
-          display.print(lux);
-          display.println(F(" lux"));
-          display.display();
+          if (lumSensor.acquire(dataSensor)){
+            Serial.println("Got the luminosity");
+            Serial.println(*dataSensor);
+            display.drawLine(0, 32, 43, 32, WHITE);
+            display.drawLine(71, 32, 120, 32, WHITE);
+            display.setCursor(40,34);
+            display.println(F("Lum:"));
+            display.print(*dataSensor);
+            display.println(F(" lux"));
+            display.display();
+          }
           break;
         default:
           log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
