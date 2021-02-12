@@ -113,6 +113,9 @@ TwoWire I2Cone = TwoWire(0);
 int address_devices[5];
 enum_mode_print screen_mode;
 
+float* lum_data;
+float* temp_data;
+
 WiFiUDP ntpUDP;
 //3600 for UTC+1
 NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600);
@@ -127,7 +130,7 @@ int splitT;
 int counter = 0;
 float temp;
 float lux;
-  
+
 void get_MAC(){
   Serial.println();
   Serial.print("ESP BOARD MAC Address: ");
@@ -136,8 +139,6 @@ void get_MAC(){
   snprintf(ssid, sizeof(ssid),"%s%02X:%02X","m2_Demo_",macAddr[4], macAddr[5]);
   Serial.println(strMacAddr);
   Serial.println(ssid);
-  //snprintf(url, sizeof(url), "%s%s","https://sensocampus.univ-tlse3.fr/device/credentials?mac=",strMacAddr);
-  //Serial.println(url);
   Serial.flush();
 }
 
@@ -187,6 +188,7 @@ void get_conf(){
    } 
    httpsClient.end();
 }
+
 void callback(char* topic, byte* payload, unsigned int length){
   //byte* p = (byte*)malloc(length);
   //memcpy(p, payload,length);
@@ -196,11 +198,6 @@ void callback(char* topic, byte* payload, unsigned int length){
   Serial.print("] ");
   if(strncmp(topic,DEFT_TOPIC_CLASS,size_t(sizeof(DEFT_TOPIC_CLASS)))==0){
     Serial.println(F(": message received"));
-    //for (int i=0;i<length;i++) {
-    //  Serial.print((char)payload[i]);
-     // message += ((char)payload[i]);
-    //}
-    //message +='\0';
     Serial.println(length);
    if (strncmp((char*)payload,"Change",length)==0){
     //TODO CHANGER L'AFFICHAGE
@@ -226,14 +223,11 @@ void callback(char* topic, byte* payload, unsigned int length){
   }else{
     Serial.println(F("Received a non-airquality related message"));
   }
-  //free(p);
 }
 
 void mqtt(){
   Serial.println("Attempting to get conf");
   if(wcsClient) {
-    Serial.println(DEFT_SERVER);
-    Serial.println(DEFT_PORT);
     client.setServer(DEFT_SERVER, DEFT_PORT);
     client.setCallback(callback);
     //if(client.connect(conf_server,cred_login, cred_pwd)){
@@ -270,8 +264,6 @@ void reconnect(){
   }
 }
 
-
-
 void printLocalTime()
 {
   char str_hms[6];
@@ -307,32 +299,40 @@ void printLocalTime()
   display.display();
 }
 
-
-
 void scanner ()
 {
   Serial.println ();
   Serial.println ("I2C scanner. Scanning ...");
   byte count = 0;
-  
+  lumSensor = MAX44009();
+  tempSensor = Adafruit_MCP9808();
   Wire.begin();
   for (byte i = 8; i < 120; i++)
   {
     Wire.beginTransmission (i);          // Begin I2C transmission Address (i)
-    if (Wire.endTransmission () == 0)  // Receive 0 = success (ACK response) 
-    {
+    if (Wire.endTransmission () == 0){
       Serial.print("Found address: "); Serial.print("0x"); Serial.println(i, HEX); 
       address_devices[count] = i;
-      count++;
-      if (i == 0x4B or i == 0x4A){
-        lumSensor = MAX44009();
+      count++; 
+      if (lumSensor.is_device(i )){
+        Serial.println ("Found luminosity sensor");
+        if(lumSensor.begin(i)){
+          delay(500);
+          //lumSensor.setResolution(MCP9808_RESOLUTION_00625DEG);
+        }
+      }else{
+        Serial.print(i,HEX);
+        Serial.println (": not luminosity sensor");
       }
-      if (i == 0x1F ){
+      if(tempSensor.is_device(i)){
         Serial.println ("Found temperature sensor");
-        tempSensor = Adafruit_MCP9808();
-          tempSensor.begin((i,HEX));
+        if(tempSensor.begin(i)){
           delay(500);
           tempSensor.setResolution(MCP9808_RESOLUTION_00625DEG);
+        }
+      }else{
+        Serial.print(i,HEX);
+        Serial.println (": not temprature sensor");
       }
     }
   }
@@ -353,11 +353,12 @@ void testdrawbitmap(void) {
 }
 void setup() {
   Wire.begin();
-  Wire.setClock(50000);
+  Wire.setClock(100000);
   delay(3000);
   // put your setup code here, to run once:
   Serial.begin(115200);
   Serial.println(F("Hello ..."));
+  log_debug("DEBUG motherfucker! do you NEED IT?\n");
   delay(1000);
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
     Serial.println(F("SSD1306 allocation failed"));
@@ -383,11 +384,12 @@ void setup() {
   timeClient.begin();
   screen_mode = Date;
   configTime(3600, 3600, ntpServer);
-  
+  temp_data = (float *)malloc(sizeof(float));
+  lum_data = (float *)malloc(sizeof(float));
 }
+
 void loop() {
   // put your main code here, to run repeatedly:
-  float* dataSensor;
   counter++;
   delay(1000);
   if(counter == 1){
@@ -409,21 +411,26 @@ void loop() {
         case Temperature:
           //Mettre a jour la temperature et l'afficher
           // Read and print out the temperature, also shows the resolution mode used for reading.
-          if(tempSensor.acquire(dataSensor)){
+          *temp_data = 0;
+           Serial.print("Temp BEFORE: "); Serial.print(*temp_data); Serial.println("*C"); 
+
+          if(tempSensor.acquire(temp_data)){
             //float f = tempSensor.readTempF();
-            Serial.print("Temp: "); Serial.print(*dataSensor); Serial.println("*C"); 
+            Serial.print("Temp: "); Serial.print(*temp_data); Serial.println("C"); 
             //Serial.print(f, 4); Serial.println("*F.");
             delay(200);
-            Serial.println(*dataSensor);
+            Serial.println(*temp_data);
             display.clearDisplay();
             display.setTextSize(2);
             display.setTextColor(SSD1306_WHITE);
             display.setCursor(40, 0);
             display.cp437(true);
             display.println(F("Temp:"));
-            display.print(*dataSensor);
+            display.print(*temp_data);
             display.println(F(" C"));
             display.display();
+          }else{
+            Serial.println("Could not acquire temperature data");
           }
           break;
           
@@ -431,16 +438,18 @@ void loop() {
           //Mettre a jour la luminosité et l'afficher
           display.clearDisplay();
           Serial.println("About to get the luminosity");
-          if (lumSensor.acquire(dataSensor)){
+          if (lumSensor.acquire(lum_data)){
             Serial.println("Got the luminosity");
-            Serial.println(*dataSensor);
+            Serial.println(*lum_data);
             display.drawLine(0, 32, 43, 32, WHITE);
             display.drawLine(71, 32, 120, 32, WHITE);
             display.setCursor(40,34);
             display.println(F("Lum:"));
-            display.print(*dataSensor);
+            display.print(*lum_data);
             display.println(F(" lux"));
             display.display();
+          }else{
+            Serial.println("Could not acquire luminosity data");
           }
           break;
         default:
