@@ -81,6 +81,7 @@ enum class max44009IntegrationT_t : uint8_t {
  */
 #define MAX44009_REG_CONFIG_DEFL        0x03  // [POR] control register default value
 #define MAX44009_REG_CONFIG_DEFL_ALT    0x01  // [POR] control register default alternate value (fakes ??)
+#define MAX44009_REG_CONFIG_DEFL_ALT2   0x02  // [POR] control register default alternate value (fakes ??)
 #define MAX44009_REG_THRESHOLD_DEFL     0xFF00  // [POR] threshold register default value
 #define MAX44009_REG_THRESHOLD_DEFL_ALT 0xEFEF  // [POR] threshold  register default alternate value (fakes ??)
 
