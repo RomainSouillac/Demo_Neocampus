@@ -29,7 +29,7 @@
 #define SCL1 22
 
 #define pinButtonChange 2
-//#define pintButtonReset
+#define pintButtonReset 34
 
 //Screen address
 #define SSD1306 0x3c 
@@ -155,6 +155,11 @@ void set_WiFi(){
   log_info(F("\n---------------------\n"));log_info(F("end of set_Wifi()"));log_info(F("\n---------------------\n"));
 }
 
+
+void reboot(){
+  esp32.restart();
+  return;
+}
 
 void button_Pressed_Change(){
   log_info(F("\n---------------------\n"));log_info(F("button_pressed_change()"));log_info(F("\n---------------------\n"));
@@ -432,7 +437,9 @@ void setup() {
   log_debug(F("\n---------------------\n"));log_debug(F("Fetching done"));log_debug(F("\n---------------------\n"));
   //interrupt button change
    attachInterrupt(digitalPinToInterrupt(pinButtonChange), button_Pressed_Change, RISING);
-   
+
+  //interrupt reset
+  attachInterrupt(digitalPinToInterrupt(pinButtonReset), reboot, RISING);
   log_info(F("\n---------------------\n"));log_info(F("end of setup()"));log_info(F("\n---------------------\n"));
 }
 
