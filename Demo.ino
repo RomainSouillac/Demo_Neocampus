@@ -130,7 +130,6 @@ Adafruit_MCP9808 tempSensor;
 String formattedDate;
 int splitT;
 volatile int counter = 0;
-volatile bool reset = false;
 float temp;
 float lux;
 
@@ -155,19 +154,6 @@ void set_WiFi(){
     log_error(F("Connection failed"));
   }
   log_info(F("\n---------------------\n"));log_info(F("end of set_Wifi()"));log_info(F("\n---------------------\n"));
-}
-
-
-void IRAM_ATTR isreboot(){  
-  log_info(F("\n---------------------\n"));log_info(F("reboot()"));log_info(F("\n---------------------\n"));
-  //esp_task_wdt_init(1,true);
-  //esp_task_wdt_add(NULL);
-  //while(true);
-  reset = true;
-  //void(* reboot) (void) = 0;
-  
-  log_info(F("\n---------------------\n"));log_info(F("end of reboot()"));log_info(F("\n---------------------\n"));
-  return;
 }
 
 void IRAM_ATTR button_Pressed_Change(){
@@ -317,10 +303,10 @@ void printLocalTime(){
   }
   strftime(str_hms, 13, "%H:%M:%S",&timeinfo);
   display.clearDisplay();
-  display.setCursor(0, 0);
+  display.setCursor(15, 0);
   display.println(str_hms);
-  display.drawLine(0, 28, 43, 28, WHITE);
-  display.drawLine(71, 28, 120, 28, WHITE);
+  display.drawLine(0, 24, 120, 24, WHITE);
+  //display.drawLine(71, 28, 120, 28, WHITE);
   display.setCursor(40, 34);
   return;
 }
@@ -446,19 +432,10 @@ void setup() {
   log_debug(F("\n---------------------\n"));log_debug(F("Fetching done"));log_debug(F("\n---------------------\n"));
   //interrupt button change
   attachInterrupt(digitalPinToInterrupt(pinButtonChange), button_Pressed_Change, RISING);
-  //interrupt reset
-  attachInterrupt(digitalPinToInterrupt(pinButtonReset), isreboot, RISING);  
-  pinMode(pinButtonReset, INPUT_PULLUP);
-
   log_info(F("\n---------------------\n"));log_info(F("end of setup()"));log_info(F("\n---------------------\n"));
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  if(reset){
-      log_info(F("\nrebooting...\n"));
-      ESP.restart();
-  }
   counter++;
   delay(100);
   display.clearDisplay();
