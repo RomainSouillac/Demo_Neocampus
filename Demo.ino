@@ -1,4 +1,3 @@
-
 #include <WiFiManager.h>
 #include <HTTPClient.h>
 #include <PubSubClient.h>
@@ -129,7 +128,7 @@ Adafruit_MCP9808 tempSensor;
 
 String formattedDate;
 int splitT;
-int counter = 0;
+volatile int counter = 0;
 float temp;
 float lux;
 
@@ -156,12 +155,23 @@ void set_WiFi(){
 
 
 void button_Pressed_Change(){
-  if(!client.connected()){
-      Serial.println(F("Connection lost, reconnecting... "));
-      reconnect();
-    }   
-    boolean rc = client.publish(DEFT_TOPIC_CLASS, "Change"); 
-    counter = 0;
+  switch(screen_mode){
+    case Date:
+    Serial.println(F("Changer pour temp"));
+      screen_mode = Temperature;
+      break;
+    case Temperature:
+    Serial.println(F("Changer pour Lum"));
+      screen_mode = Luminosity;
+      break;
+    case Luminosity:
+    Serial.println(F("Changer pour Date"));
+      screen_mode = Date;
+      break;
+    default:
+      log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
+  }
+  counter = 0;
   return;
 }
 
@@ -278,39 +288,46 @@ void reconnect(){
   }
 }
 
-void printLocalTime()
-{
-  char str_hms[6];
-  char str_adb[13];
+void printTime(){
+  char str_hms[13];
   struct tm timeinfo;
   if(!getLocalTime(&timeinfo)){
     Serial.println("Failed to obtain time");
     return;
   }
-  Serial.println(&timeinfo, "%A, %B %d %Y %H:%M:%S");
-  char buf[15];
-
-  /*uint8_t mo = month();  // month (1 to 12)
-  uint8_t dd = day();  // day of month
-  uint8_t hh = hour();  // hour
-  uint8_t mi = minute();  // minute
-
-  snprintf(buf, "%c%c%c %02d - %02d:%02d",
-          ("BJFMAMJJASOND"[(mo <= 12) ? mo : 0]),
-          ("aaeapauuuecoe"[(mo <= 12) ? mo : 0]),
-          ("dnbrrynlgptvc"[(mo <= 12) ? mo : 0]),
-          dd, hh, mi);
-          
-  strftime(str_dd, sizeof(), "%3A %B %3d",&timeinfo);*/
-  strftime(str_hms, 6, "%H:%M",&timeinfo);
+  strftime(str_hms, 13, "%H:%M:%S",&timeinfo);
   display.clearDisplay();
-  display.setTextSize(2);
-  display.cp437(true);
-  display.setTextColor(SSD1306_WHITE);
-  display.setCursor(30, 0);
-  //display.println(buf);
+  display.setCursor(0, 0);
   display.println(str_hms);
-  display.display();
+  display.drawLine(0, 28, 43, 28, WHITE);
+  display.drawLine(71, 28, 120, 28, WHITE);
+  display.setCursor(40, 34);
+}
+
+void printLocalTime()
+{
+  char str_Ddm[11];
+  struct tm timeinfo;
+  if(!getLocalTime(&timeinfo)){
+    Serial.println("Failed to obtain time");
+    return;
+  }
+  strftime(str_Ddm, 22, "%a %d %b",&timeinfo);
+  display.setCursor(0, 34);
+  display.println(str_Ddm);
+  //display.clearDisplay();
+  /*char str_hms[22];
+  struct tm timeinfo;
+  if(!getLocalTime(&timeinfo)){
+    Serial.println("Failed to obtain time");
+    return;
+  }
+  Serial.println(&timeinfo, "%a %d %b %H:%M:%S");
+  strftime(str_hms, 22, "%a %d %b\n%H:%M:%S",&timeinfo);
+  display.clearDisplay();
+  display.setCursor(0, 20);
+  display.println(str_hms);
+  display.display();*/
 }
 
 void scanner ()
@@ -378,6 +395,10 @@ void setup() {
     Serial.println(F("SSD1306 allocation failed"));
     for(;;); // Don't proceed, loop forever
   }
+  display.setTextSize(2);
+  display.cp437(true);
+  display.setTextColor(SSD1306_WHITE);
+  
   testdrawbitmap();
   bool success = LITTLEFS.begin();
  
@@ -392,84 +413,81 @@ void setup() {
   mqtt();
   scanner();
   I2Cone.begin(SDA1,SCL1,400000); // SDA pin 21, SCL pin 22
-  // TODO PRINT LOGO neocampus here
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   
   screen_mode = Date;
   configTime(3600, 3600, ntpServer);
   temp_data = (float *)malloc(sizeof(float));
   lum_data = (float *)malloc(sizeof(float));
-
+  *lum_data = 0.0;
+  *temp_data=0.0;
+  log_debug(F("\n---------------------\n"));log_debug(F("Fetching data"));log_debug(F("\n---------------------\n"));
+  delay(1500);
+  if(lumSensor.acquire(lum_data)){
+    log_debug(F("\nluminosity value acquired in setup\n"));
+  }else{
+    log_debug(F("\nluminosity init value not acquired\n"));
+  }
+  delay(1000);
+   if(tempSensor.acquire(temp_data)){
+    log_debug(F("\ntemperature value acquired in setup\n"));
+  }else{
+    log_debug(F("\ntemperature init value not acquired\n"));
+  }
   //interrupt button change
    attachInterrupt(digitalPinToInterrupt(pinButtonChange), button_Pressed_Change, RISING);
+log_debug(F("\n---------------------\n"));log_debug(F("Fetching done"));log_debug(F("\n---------------------\n"));
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   counter++;
-  delay(1000);
-  switch(screen_mode){
-    case Date:
-      printLocalTime();
-      /*display.clearDisplay();
-      display.setTextSize(2);
-      display.setTextColor(SSD1306_WHITE);
-      display.setCursor(40, 0);
-      display.cp437(true);
-      display.print(DatePlusTime);
-      display.display()
-;         */ //Mettre a jour la date et l'afficher
-      break;
-      
-    case Temperature:
-      //Mettre a jour la temperature et l'afficher
-      // Read and print out the temperature, also shows the resolution mode used for reading.
-      *temp_data = 0;
-       Serial.print("Temp BEFORE: "); Serial.print(*temp_data); Serial.println("*C"); 
-
-      if(tempSensor.acquire(temp_data)){
-        //float f = tempSensor.readTempF();
-        Serial.print("Temp: "); Serial.print(*temp_data); Serial.println("C"); 
-        //Serial.print(f, 4); Serial.println("*F.");
-        delay(200);
-        Serial.println(*temp_data);
-        display.clearDisplay();
-        display.setTextSize(2);
-        display.setTextColor(SSD1306_WHITE);
-        display.setCursor(40, 0);
-        display.cp437(true);
-        display.println(F("Temp:"));
-        display.print(*temp_data);
-        display.println(F(" C"));
-        display.display();
-      }else{
-        Serial.println("Could not acquire temperature data");
-      }
-      break;
-      
-    case Luminosity:
-      //Mettre a jour la luminosité et l'afficher
-      display.clearDisplay();
-      Serial.println("About to get the luminosity");
-      if (lumSensor.acquire(lum_data)){
-        Serial.println("Got the luminosity");
-        Serial.println(*lum_data);
-        display.drawLine(0, 32, 43, 32, WHITE);
-        display.drawLine(71, 32, 120, 32, WHITE);
-        display.setCursor(40,34);
+  delay(100);
+  display.clearDisplay();
+    switch(screen_mode){
+      case Date:
+        printTime();
+        printLocalTime();
+        //Mettre a jour la date et l'afficher
+        break;
+      case Temperature:
+        //Mettre a jour la temperature et l'afficher
+        // Read and print out the temperature, also shows the resolution mode used for reading.
+        printTime();
+        display.println(F("Temp:"));  
+        if(counter==1){
+          if(tempSensor.acquire(temp_data)){
+            Serial.print("Temperature: "); Serial.print(*temp_data); Serial.println("C"); 
+            //Serial.print(f, 4); Serial.println("*F.");
+          }
+        }
+          display.print(*temp_data);
+          display.println(F(" C"));
+        //}else{
+          //display.println(F("no data"));
+        //}
+        break;
+        
+      case Luminosity:
+        //Mettre a jour la luminosité et l'afficher
+        printTime();
         display.println(F("Lum:"));
-        display.print(*lum_data);
-        display.println(F(" lux"));
-        display.display();
-      }else{
-        Serial.println("Could not acquire luminosity data");
-      }
-      break;
-    default:
-      log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
-  }
-      
-  if (counter == 9) {  
+        if(counter==1){
+          if(lumSensor.acquire(lum_data)){
+            Serial.print("Luminosity :");Serial.print(*lum_data);Serial.println(" lux");
+          }
+        }
+          display.print(*lum_data);
+          display.println(F(" lux"));
+        //}else{
+         // display.println(F("no data"));
+        //}
+        break;
+      default:
+        log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
+    }
+  display.display();
+  if (counter == 90) {  
       if(!client.connected()){
         Serial.println(F("Connection lost, reconnecting... "));
         reconnect();
