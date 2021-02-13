@@ -23,7 +23,7 @@
 #define DEFT_TOPIC "testTopic/display"
 #define DEFT_TOPIC_CLASS "testTopic/display/command"
 #define DEFT_PORT 10483
-
+#define DEFT_ID "UberSensor_demo"
 
 #define SDA1 21
 #define SCL1 22
@@ -133,6 +133,7 @@ float temp;
 float lux;
 
 void get_MAC(){
+  log_info(F("\n---------------------\n"));log_info(F("get_MAC()"));log_info(F("\n---------------------\n"));
   Serial.println();
   Serial.print("ESP BOARD MAC Address: ");
   WiFi.macAddress(macAddr);
@@ -141,43 +142,46 @@ void get_MAC(){
   Serial.println(strMacAddr);
   Serial.println(ssid);
   Serial.flush();
+  log_info(F("\n---------------------\n"));log_info(F("end of get_MAC()"));log_info(F("\n---------------------\n"));
 }
 
 void set_WiFi(){
+  log_info(F("\n---------------------\n"));log_info(F("set_Wifi()"));log_info(F("\n---------------------\n"));
   //wm.resetSettings();
   WiFi.mode(WIFI_STA);
-  if(!wm.autoConnect(ssid,pwd))
-    Serial.println("Conn Doomed");
-  else{
-    Serial.println("Conn est");
+  if(!wm.autoConnect(ssid,pwd)){
+    log_error(F("Connection failed"));
   }
+  log_info(F("\n---------------------\n"));log_info(F("end of set_Wifi()"));log_info(F("\n---------------------\n"));
 }
 
 
 void button_Pressed_Change(){
-  switch(screen_mode){
-    case Date:
-    Serial.println(F("Changer pour temp"));
-      screen_mode = Temperature;
-      break;
-    case Temperature:
-    Serial.println(F("Changer pour Lum"));
-      screen_mode = Luminosity;
-      break;
-    case Luminosity:
-    Serial.println(F("Changer pour Date"));
-      screen_mode = Date;
-      break;
-    default:
-      log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
-  }
+  log_info(F("\n---------------------\n"));log_info(F("button_pressed_change()"));log_info(F("\n---------------------\n"));
+   switch(screen_mode){
+      case Date:
+      log_debug(F("DATE ---> TEMP\n"));
+        screen_mode = Temperature;
+        break;
+      case Temperature:
+      log_debug(F("TEMP ---> LUM\n"));
+        screen_mode = Luminosity;
+        break;
+      case Luminosity:
+      log_debug(F("LUM ----> DATE\n"));
+        screen_mode = Date;
+        break;
+      default:
+        log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
+    }
   counter = 0;
+  log_info(F("\n---------------------\n"));log_info(F("button_pressed_change()"));log_info(F("\n---------------------\n"));
   return;
 }
 
 
 void get_conf(){
-  Serial.println("Attempting to get conf");
+  log_info(F("\n---------------------\n"));log_info(F("mqtt_get_conf()"));log_info(F("\n---------------------\n"));
   const char* cred_login = JSON_cred["login"];
   const char* cred_pwd = JSON_cred["password"];
   const char*  conf_server = JSON_cred["server"];
@@ -187,108 +191,110 @@ void get_conf(){
   int httpCode = httpsClient.GET();
    if (httpCode > 0) { //Check for the returning code
      String payload = httpsClient.getString();
-     Serial.println(httpCode);
+     log_debug(F("HTTP code received :"));log_debug(F(httpCode));log_debug(F("\n"));
      //Serial.println(payload);
      /* Unboxing credentials from cred server */
      DeserializationError error = deserializeJson(JSON_conf, payload);
      // Test if parsing succeeds.
      if (error) {
-       Serial.print(F("deserializeJson() failed: "));
-       Serial.println(error.c_str());
+       log_error(F("deserializeJson() failed: ")); log_error(F(error.c_str())); log_error(F("\n"));
        return;
      }
      serializeJsonPretty(JSON_conf,Serial);
      File file = LITTLEFS.open(CONFIG, "w");
       if (!file) {
-        Serial.println("Error opening file for writing");
+        log_error(F("unable to open config file\n"));
         return;
       }
       if (serializeJson(JSON_conf, file) == 0) {
-        Serial.println(F("Failed to write to config.txt"));
+        log_error(F("unable to write into config file\n"));
       } else {
-        Serial.println(F("Config successfully saved"));
+        log_debug(F("Config successfully saved\n"));
       }
       file.close();
    } 
    httpsClient.end();
+  log_info(F("\n---------------------\n"));log_info(F("end of mqtt_get_conf()"));log_info(F("\n---------------------\n"));
+  return;
 }
 
 void callback(char* topic, byte* payload, unsigned int length){
-  //byte* p = (byte*)malloc(length);
-  //memcpy(p, payload,length);
-  //String message;
-  Serial.print("Message arrived [");
-  Serial.print(topic);
-  Serial.print("] ");
+  log_info(F("\n---------------------\n"));log_info(F("mqtt_callback()"));log_info(F("\n---------------------\n"));
+  log_debug(F("[")); log_debug(F(topic)); log_debug(F("]:"));
   if(strncmp(topic,DEFT_TOPIC_CLASS,size_t(sizeof(DEFT_TOPIC_CLASS)))==0){
-    Serial.println(F(": message received"));
-    Serial.println(length);
+    log_debug(F("message recevied\n")); 
    if (strncmp((char*)payload,"Change",length)==0){
     //TODO CHANGER L'AFFICHAGE
     switch(screen_mode){
       case Date:
-      Serial.println(F("Changer pour temp"));
+      log_debug(F("DATE ---> TEMP\n"));
         screen_mode = Temperature;
         break;
       case Temperature:
-      Serial.println(F("Changer pour Lum"));
+      log_debug(F("TEMP ---> LUM\n"));
         screen_mode = Luminosity;
         break;
       case Luminosity:
-      Serial.println(F("Changer pour Date"));
+      log_debug(F("LUM ----> DATE\n"));
         screen_mode = Date;
         break;
       default:
         log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
     }
    }else{
-    Serial.println(F("Received a non Change Order message"));
+    log_warning(F("Received a non Change Order message"));
    }
   }else{
-    Serial.println(F("Received a non-airquality related message"));
+    log_warning(F("Received a non-airquality related message"));
   }
+  log_info(F("\n---------------------\n"));log_info(F("end of mqtt_callback()"));log_info(F("\n---------------------\n"));
+  return;
 }
 
 void mqtt(){
-  Serial.println("Attempting to get conf");
+  log_info(F("\n---------------------\n"));log_info(F("mqtt_init()"));log_info(F("\n---------------------\n"));
   if(wcsClient) {
     client.setServer(DEFT_SERVER, DEFT_PORT);
     client.setCallback(callback);
     //if(client.connect(conf_server,cred_login, cred_pwd)){
-      if(client.connect("toto", DEFT_LOGIN, DEFT_PWD)){
-        Serial.println(F("Client connected"));
+      if(client.connect(DEFT_ID, DEFT_LOGIN, DEFT_PWD)){
+        log_debug(F("Client login:"));log_debug(F(DEFT_LOGIN));
+        log_debug(F("Client password:"));log_debug(F(DEFT_PWD));log_debug(F("\n"));
+        log_debug(F("Client ID:"));log_debug(F(DEFT_ID));log_debug(F("\n"));
         if(!client.subscribe(DEFT_TOPIC_CLASS)){
-          Serial.println("Failed to subscribe to ");
-          Serial.println(DEFT_TOPIC_CLASS);
+          log_debug(F("Client failed to subscribe to "));
         }else{
-          Serial.println("subscribing done to ");
-          Serial.println(DEFT_TOPIC_CLASS);
+          log_debug(F("Client subscribed to "));
         }
+        log_debug(F(DEFT_TOPIC_CLASS));
       }else
-      Serial.println(F("MQTT connection failed."));
+      log_warning(F("MQTT connection failed."));
   }else{
-    Serial.println("Failed to set up WiFiClientSecure");
-  }
+    log_warning(F("Failed to set up WiFiClientSecure"));
+  } 
+  log_info(F("\n---------------------\n"));log_info(F("end of mqtt_init()"));log_info(F("\n---------------------\n"));
+  return;
 }
 
 void reconnect(){
+  log_info(F("\n---------------------\n"));log_info(F("mqtt_reconnect()"));log_info(F("\n---------------------\n"));
   while(!client.connected()){
-    Serial.print(F("MQTT connection pending..."));
+    log_debug(F("MQTT client, reconnecting...\n"));
     if(client.connect(DEFT_SERVER)){
-      Serial.println(F("Connected"));
+      log_debug(F("MQTT client reconnected\n"));
       client.publish(DEFT_TOPIC,"hello world");
       client.subscribe(DEFT_TOPIC_CLASS);
     }else{
-      Serial.print("failed, rc=");
-      Serial.print(client.state());
-      Serial.println(" try again in 5 seconds");
+      log_error(F("MQTT client failed, rc="));log_error(client.state());log_error(F(" try again in 5 seconds\n"));
       // Wait 5 seconds before retrying
       delay(5000);
     }
   }
+  log_info(F("\n---------------------\n"));log_info(F("end of mqtt_reconnect()"));log_info(F("\n---------------------\n"));
+  return;
 }
 
-void printTime(){
+void printLocalTime(){
   char str_hms[13];
   struct tm timeinfo;
   if(!getLocalTime(&timeinfo)){
@@ -302,77 +308,66 @@ void printTime(){
   display.drawLine(0, 28, 43, 28, WHITE);
   display.drawLine(71, 28, 120, 28, WHITE);
   display.setCursor(40, 34);
+  return;
 }
 
-void printLocalTime()
+void printLocalDate()
 {
   char str_Ddm[11];
   struct tm timeinfo;
   if(!getLocalTime(&timeinfo)){
-    Serial.println("Failed to obtain time");
+    log_error(F("Failed to obtain time"));
     return;
   }
   strftime(str_Ddm, 22, "%a %d %b",&timeinfo);
   display.setCursor(0, 34);
   display.println(str_Ddm);
-  //display.clearDisplay();
-  /*char str_hms[22];
-  struct tm timeinfo;
-  if(!getLocalTime(&timeinfo)){
-    Serial.println("Failed to obtain time");
-    return;
-  }
-  Serial.println(&timeinfo, "%a %d %b %H:%M:%S");
-  strftime(str_hms, 22, "%a %d %b\n%H:%M:%S",&timeinfo);
-  display.clearDisplay();
-  display.setCursor(0, 20);
-  display.println(str_hms);
-  display.display();*/
+  return;
 }
 
 void scanner ()
 {
-  Serial.println ();
-  Serial.println ("I2C scanner. Scanning ...");
+  log_info(F("\n---------------------\n"));log_info(F("i2c _scannner()"));log_info(F("\n---------------------\n"));
   byte count = 0;
   lumSensor = MAX44009();
   tempSensor = Adafruit_MCP9808();
   Wire.begin();
-  for (byte i = 8; i < 120; i++)
-  {
+  for (byte i = 8; i < 120; i++){
     Wire.beginTransmission (i);          // Begin I2C transmission Address (i)
     if (Wire.endTransmission () == 0){
-      Serial.print("Found address: "); Serial.print("0x"); Serial.println(i, HEX); 
+      //log_debug(F("Found address: 0x")); log_debug((i, HEX)); log_debug(F("\n")); log_flush();
+      Serial.print("Found address: "); Serial.print("0x"); Serial.println(i, HEX);
       address_devices[count] = i;
       count++; 
-      if (lumSensor.is_device(i )){
-        Serial.println ("Found luminosity sensor");
+      if (lumSensor.is_device(i)){
+        log_debug(F("found sensor in MAX44009 address pool\n"));log_flush();
         if(lumSensor.begin(i)){
           delay(500);
-          //lumSensor.setResolution(MCP9808_RESOLUTION_00625DEG);
         }
-      }else{
+      }else{        
+        Serial.print("\n");
         Serial.print(i,HEX);
         Serial.println (": not luminosity sensor");
       }
       if(tempSensor.is_device(i)){
-        Serial.println ("Found temperature sensor");
+        log_debug(F("found sensor in MCP9808 address pool\n"));log_flush();
         if(tempSensor.begin(i)){
           delay(500);
           tempSensor.setResolution(MCP9808_RESOLUTION_00625DEG);
         }
       }else{
+        Serial.print("\n");
         Serial.print(i,HEX);
-        Serial.println (": not temprature sensor");
+        Serial.println (": not temperature sensor");
       }
     }
   }
-  Serial.print ("Found ");      
-  Serial.print (count, DEC);        // numbers of devices
-  Serial.println (" device(s).");
+  log_debug(F("i2c scan device count: "));log_debug(count);log_debug(F("\n"));
+  log_info(F("\n---------------------\n"));log_info(F("end of i2c_scannner()"));log_info(F("\n---------------------\n"));
 }
 
 void testdrawbitmap(void) {
+  log_info(F("\n---------------------\n"));log_info(F("drawbitmap()"));log_info(F("\n---------------------\n"));
   display.clearDisplay();
   display.drawBitmap(
     (display.width()  - NEOCAMPUS_WIDTH ) / 2,
@@ -381,6 +376,7 @@ void testdrawbitmap(void) {
   display.display();
   delay(1000);
   
+  log_info(F("\n---------------------\n"));log_info(F("end of drawbitmap()"));log_info(F("\n---------------------\n"));
 }
 void setup() {
   Wire.begin();
@@ -388,11 +384,11 @@ void setup() {
   delay(3000);
   // put your setup code here, to run once:
   Serial.begin(115200);
-  Serial.println(F("Hello ..."));
-  log_debug("DEBUG motherfucker! do you NEED IT?\n");
+  log_info(F("\n---------------------\n"));log_info(F("setup()"));log_info(F("\n---------------------\n"));
+  log_debug(F("debug mode enabled\n"));
   delay(1000);
   if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
-    Serial.println(F("SSD1306 allocation failed"));
+    log_debug(F("SSD1306 allocation failed"));
     for(;;); // Don't proceed, loop forever
   }
   display.setTextSize(2);
@@ -403,9 +399,9 @@ void setup() {
   bool success = LITTLEFS.begin();
  
   if (success) {
-    Serial.println("File system mounted with success");
+    log_debug(F("File system mounted with success"));
   } else {
-    Serial.println("Error mounting the file system");
+    log_debug(F("Error mounting the file system"));
     return;
   }
   get_MAC();
@@ -422,21 +418,22 @@ void setup() {
   *lum_data = 0.0;
   *temp_data=0.0;
   log_debug(F("\n---------------------\n"));log_debug(F("Fetching data"));log_debug(F("\n---------------------\n"));
-  delay(1500);
-  if(lumSensor.acquire(lum_data)){
-    log_debug(F("\nluminosity value acquired in setup\n"));
-  }else{
+  while(!lumSensor.acquire(lum_data)){
     log_debug(F("\nluminosity init value not acquired\n"));
+      delay(800);
   }
-  delay(1000);
+  log_debug(F("\nluminosity value acquired in setup\n"));
+
    if(tempSensor.acquire(temp_data)){
     log_debug(F("\ntemperature value acquired in setup\n"));
   }else{
     log_debug(F("\ntemperature init value not acquired\n"));
   }
+  log_debug(F("\n---------------------\n"));log_debug(F("Fetching done"));log_debug(F("\n---------------------\n"));
   //interrupt button change
    attachInterrupt(digitalPinToInterrupt(pinButtonChange), button_Pressed_Change, RISING);
-log_debug(F("\n---------------------\n"));log_debug(F("Fetching done"));log_debug(F("\n---------------------\n"));
+   
+  log_info(F("\n---------------------\n"));log_info(F("end of setup()"));log_info(F("\n---------------------\n"));
 }
 
 void loop() {
@@ -444,52 +441,52 @@ void loop() {
   counter++;
   delay(100);
   display.clearDisplay();
-    switch(screen_mode){
-      case Date:
-        printTime();
-        printLocalTime();
-        //Mettre a jour la date et l'afficher
-        break;
-      case Temperature:
-        //Mettre a jour la temperature et l'afficher
-        // Read and print out the temperature, also shows the resolution mode used for reading.
-        printTime();
-        display.println(F("Temp:"));  
-        if(counter==1){
-          if(tempSensor.acquire(temp_data)){
-            Serial.print("Temperature: "); Serial.print(*temp_data); Serial.println("C"); 
-            //Serial.print(f, 4); Serial.println("*F.");
-          }
+  switch(screen_mode){
+    case Date:
+      printLocalTime();
+      printLocalDate();
+      //Mettre a jour la date et l'afficher
+      break;
+    case Temperature:
+      //Mettre a jour la temperature et l'afficher
+      // Read and print out the temperature, also shows the resolution mode used for reading.
+      printLocalTime();
+      display.println(F("Temp:"));  
+      if(counter==1){
+        if(tempSensor.acquire(temp_data)){
+          log_debug(F("\nTemperature :"));log_debug(*temp_data);log_debug(F(" C\n"));
+          //Serial.print(f, 4); Serial.println("*F.");
         }
-          display.print(*temp_data);
-          display.println(F(" C"));
-        //}else{
-          //display.println(F("no data"));
-        //}
-        break;
-        
-      case Luminosity:
-        //Mettre a jour la luminosité et l'afficher
-        printTime();
-        display.println(F("Lum:"));
-        if(counter==1){
-          if(lumSensor.acquire(lum_data)){
-            Serial.print("Luminosity :");Serial.print(*lum_data);Serial.println(" lux");
-          }
+      }
+        display.print(*temp_data);
+        display.println(F(" C"));
+      //}else{
+        //display.println(F("no data"));
+      //}
+      break;
+      
+    case Luminosity:
+      //Mettre a jour la luminosité et l'afficher
+      printLocalTime();
+      display.println(F("Lum:"));
+      if(counter==1){
+        if(lumSensor.acquire(lum_data)){
+          log_debug(F("\nLuminosity :"));log_debug(*lum_data);log_debug(F(" lux\n"));
         }
-          display.print(*lum_data);
-          display.println(F(" lux"));
-        //}else{
-         // display.println(F("no data"));
-        //}
-        break;
-      default:
-        log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
-    }
+      }
+        display.print(*lum_data);
+        display.println(F(" lux"));
+      //}else{
+       // display.println(F("no data"));
+      //}
+      break;
+    default:
+      log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
+  }
   display.display();
   if (counter == 90) {  
       if(!client.connected()){
-        Serial.println(F("Connection lost, reconnecting... "));
+        log_warning(F("Connection lost, reconnecting... "));
         reconnect();
       }   
       boolean rc = client.publish(DEFT_TOPIC_CLASS, "Change"); 
