@@ -13,6 +13,7 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include "time.h"
+//#include <avr/wdt.h>
 
 #define CREDENTIALS "/cred.txt"
 #define CONFIG "/conf.txt"
@@ -29,7 +30,7 @@
 #define SCL1 22
 
 #define pinButtonChange 2
-#define pintButtonReset 34
+#define pinButtonReset 34
 
 //Screen address
 #define SSD1306 0x3c 
@@ -129,6 +130,7 @@ Adafruit_MCP9808 tempSensor;
 String formattedDate;
 int splitT;
 volatile int counter = 0;
+volatile bool reset = false;
 float temp;
 float lux;
 
@@ -156,12 +158,19 @@ void set_WiFi(){
 }
 
 
-void reboot(){
-  esp32.restart();
+void IRAM_ATTR isreboot(){  
+  log_info(F("\n---------------------\n"));log_info(F("reboot()"));log_info(F("\n---------------------\n"));
+  //esp_task_wdt_init(1,true);
+  //esp_task_wdt_add(NULL);
+  //while(true);
+  reset = true;
+  //void(* reboot) (void) = 0;
+  
+  log_info(F("\n---------------------\n"));log_info(F("end of reboot()"));log_info(F("\n---------------------\n"));
   return;
 }
 
-void button_Pressed_Change(){
+void IRAM_ATTR button_Pressed_Change(){
   log_info(F("\n---------------------\n"));log_info(F("button_pressed_change()"));log_info(F("\n---------------------\n"));
    switch(screen_mode){
       case Date:
@@ -436,15 +445,20 @@ void setup() {
   }
   log_debug(F("\n---------------------\n"));log_debug(F("Fetching done"));log_debug(F("\n---------------------\n"));
   //interrupt button change
-   attachInterrupt(digitalPinToInterrupt(pinButtonChange), button_Pressed_Change, RISING);
-
+  attachInterrupt(digitalPinToInterrupt(pinButtonChange), button_Pressed_Change, RISING);
   //interrupt reset
-  attachInterrupt(digitalPinToInterrupt(pinButtonReset), reboot, RISING);
+  attachInterrupt(digitalPinToInterrupt(pinButtonReset), isreboot, RISING);  
+  pinMode(pinButtonReset, INPUT_PULLUP);
+
   log_info(F("\n---------------------\n"));log_info(F("end of setup()"));log_info(F("\n---------------------\n"));
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
+  if(reset){
+      log_info(F("\nrebooting...\n"));
+      ESP.restart();
+  }
   counter++;
   delay(100);
   display.clearDisplay();
