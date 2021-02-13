@@ -408,66 +408,66 @@ void loop() {
   // put your main code here, to run repeatedly:
   counter++;
   delay(1000);
-    switch(screen_mode){
-      case Date:
-        printLocalTime();
-        /*display.clearDisplay();
+  switch(screen_mode){
+    case Date:
+      printLocalTime();
+      /*display.clearDisplay();
+      display.setTextSize(2);
+      display.setTextColor(SSD1306_WHITE);
+      display.setCursor(40, 0);
+      display.cp437(true);
+      display.print(DatePlusTime);
+      display.display()
+;         */ //Mettre a jour la date et l'afficher
+      break;
+      
+    case Temperature:
+      //Mettre a jour la temperature et l'afficher
+      // Read and print out the temperature, also shows the resolution mode used for reading.
+      *temp_data = 0;
+       Serial.print("Temp BEFORE: "); Serial.print(*temp_data); Serial.println("*C"); 
+
+      if(tempSensor.acquire(temp_data)){
+        //float f = tempSensor.readTempF();
+        Serial.print("Temp: "); Serial.print(*temp_data); Serial.println("C"); 
+        //Serial.print(f, 4); Serial.println("*F.");
+        delay(200);
+        Serial.println(*temp_data);
+        display.clearDisplay();
         display.setTextSize(2);
         display.setTextColor(SSD1306_WHITE);
         display.setCursor(40, 0);
         display.cp437(true);
-        display.print(DatePlusTime);
-        display.display()
-;         */ //Mettre a jour la date et l'afficher
-        break;
-        
-      case Temperature:
-        //Mettre a jour la temperature et l'afficher
-        // Read and print out the temperature, also shows the resolution mode used for reading.
-        *temp_data = 0;
-         Serial.print("Temp BEFORE: "); Serial.print(*temp_data); Serial.println("*C"); 
-
-        if(tempSensor.acquire(temp_data)){
-          //float f = tempSensor.readTempF();
-          Serial.print("Temp: "); Serial.print(*temp_data); Serial.println("C"); 
-          //Serial.print(f, 4); Serial.println("*F.");
-          delay(200);
-          Serial.println(*temp_data);
-          display.clearDisplay();
-          display.setTextSize(2);
-          display.setTextColor(SSD1306_WHITE);
-          display.setCursor(40, 0);
-          display.cp437(true);
-          display.println(F("Temp:"));
-          display.print(*temp_data);
-          display.println(F(" C"));
-          display.display();
-        }else{
-          Serial.println("Could not acquire temperature data");
-        }
-        break;
-        
-      case Luminosity:
-        //Mettre a jour la luminosité et l'afficher
-        display.clearDisplay();
-        Serial.println("About to get the luminosity");
-        if (lumSensor.acquire(lum_data)){
-          Serial.println("Got the luminosity");
-          Serial.println(*lum_data);
-          display.drawLine(0, 32, 43, 32, WHITE);
-          display.drawLine(71, 32, 120, 32, WHITE);
-          display.setCursor(40,34);
-          display.println(F("Lum:"));
-          display.print(*lum_data);
-          display.println(F(" lux"));
-          display.display();
-        }else{
-          Serial.println("Could not acquire luminosity data");
-        }
-        break;
-      default:
-        log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
-    }
+        display.println(F("Temp:"));
+        display.print(*temp_data);
+        display.println(F(" C"));
+        display.display();
+      }else{
+        Serial.println("Could not acquire temperature data");
+      }
+      break;
+      
+    case Luminosity:
+      //Mettre a jour la luminosité et l'afficher
+      display.clearDisplay();
+      Serial.println("About to get the luminosity");
+      if (lumSensor.acquire(lum_data)){
+        Serial.println("Got the luminosity");
+        Serial.println(*lum_data);
+        display.drawLine(0, 32, 43, 32, WHITE);
+        display.drawLine(71, 32, 120, 32, WHITE);
+        display.setCursor(40,34);
+        display.println(F("Lum:"));
+        display.print(*lum_data);
+        display.println(F(" lux"));
+        display.display();
+      }else{
+        Serial.println("Could not acquire luminosity data");
+      }
+      break;
+    default:
+      log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
+  }
       
   if (counter == 9) {  
       if(!client.connected()){
