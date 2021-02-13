@@ -29,6 +29,9 @@
 #define SDA1 21
 #define SCL1 22
 
+#define pinButtonChange 2
+//#define pintButtonReset
+
 //Screen address
 #define SSD1306 0x3c 
 //Screen setup
@@ -118,7 +121,6 @@ float* temp_data;
 
 WiFiUDP ntpUDP;
 //3600 for UTC+1
-NTPClient timeClient(ntpUDP, "pool.ntp.org", 3600);
 //NTP =====================================================================
 const char* ntpServer = "pool.ntp.org";
 //Sensors
@@ -151,6 +153,18 @@ void set_WiFi(){
     Serial.println("Conn est");
   }
 }
+
+
+void button_Pressed_Change(){
+  if(!client.connected()){
+      Serial.println(F("Connection lost, reconnecting... "));
+      reconnect();
+    }   
+    boolean rc = client.publish(DEFT_TOPIC_CLASS, "Change"); 
+    counter = 0;
+  return;
+}
+
 
 void get_conf(){
   Serial.println("Attempting to get conf");
@@ -381,83 +395,81 @@ void setup() {
   // TODO PRINT LOGO neocampus here
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   
-  timeClient.begin();
   screen_mode = Date;
   configTime(3600, 3600, ntpServer);
   temp_data = (float *)malloc(sizeof(float));
   lum_data = (float *)malloc(sizeof(float));
+
+  //interrupt button change
+   attachInterrupt(digitalPinToInterrupt(pinButtonChange), button_Pressed_Change, RISING);
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
   counter++;
   delay(1000);
-  if(counter == 1){
-    Serial.println();
-    delay(500);
-      switch(screen_mode){
-        case Date:
-          printLocalTime();
-          /*display.clearDisplay();
+    switch(screen_mode){
+      case Date:
+        printLocalTime();
+        /*display.clearDisplay();
+        display.setTextSize(2);
+        display.setTextColor(SSD1306_WHITE);
+        display.setCursor(40, 0);
+        display.cp437(true);
+        display.print(DatePlusTime);
+        display.display()
+;         */ //Mettre a jour la date et l'afficher
+        break;
+        
+      case Temperature:
+        //Mettre a jour la temperature et l'afficher
+        // Read and print out the temperature, also shows the resolution mode used for reading.
+        *temp_data = 0;
+         Serial.print("Temp BEFORE: "); Serial.print(*temp_data); Serial.println("*C"); 
+
+        if(tempSensor.acquire(temp_data)){
+          //float f = tempSensor.readTempF();
+          Serial.print("Temp: "); Serial.print(*temp_data); Serial.println("C"); 
+          //Serial.print(f, 4); Serial.println("*F.");
+          delay(200);
+          Serial.println(*temp_data);
+          display.clearDisplay();
           display.setTextSize(2);
           display.setTextColor(SSD1306_WHITE);
           display.setCursor(40, 0);
           display.cp437(true);
-          display.print(DatePlusTime);
-          display.display()
-;         */ //Mettre a jour la date et l'afficher
-          break;
-          
-        case Temperature:
-          //Mettre a jour la temperature et l'afficher
-          // Read and print out the temperature, also shows the resolution mode used for reading.
-          *temp_data = 0;
-           Serial.print("Temp BEFORE: "); Serial.print(*temp_data); Serial.println("*C"); 
-
-          if(tempSensor.acquire(temp_data)){
-            //float f = tempSensor.readTempF();
-            Serial.print("Temp: "); Serial.print(*temp_data); Serial.println("C"); 
-            //Serial.print(f, 4); Serial.println("*F.");
-            delay(200);
-            Serial.println(*temp_data);
-            display.clearDisplay();
-            display.setTextSize(2);
-            display.setTextColor(SSD1306_WHITE);
-            display.setCursor(40, 0);
-            display.cp437(true);
-            display.println(F("Temp:"));
-            display.print(*temp_data);
-            display.println(F(" C"));
-            display.display();
-          }else{
-            Serial.println("Could not acquire temperature data");
-          }
-          break;
-          
-        case Luminosity:
-          //Mettre a jour la luminosité et l'afficher
-          display.clearDisplay();
-          Serial.println("About to get the luminosity");
-          if (lumSensor.acquire(lum_data)){
-            Serial.println("Got the luminosity");
-            Serial.println(*lum_data);
-            display.drawLine(0, 32, 43, 32, WHITE);
-            display.drawLine(71, 32, 120, 32, WHITE);
-            display.setCursor(40,34);
-            display.println(F("Lum:"));
-            display.print(*lum_data);
-            display.println(F(" lux"));
-            display.display();
-          }else{
-            Serial.println("Could not acquire luminosity data");
-          }
-          break;
-        default:
-          log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
-      }
+          display.println(F("Temp:"));
+          display.print(*temp_data);
+          display.println(F(" C"));
+          display.display();
+        }else{
+          Serial.println("Could not acquire temperature data");
+        }
+        break;
+        
+      case Luminosity:
+        //Mettre a jour la luminosité et l'afficher
+        display.clearDisplay();
+        Serial.println("About to get the luminosity");
+        if (lumSensor.acquire(lum_data)){
+          Serial.println("Got the luminosity");
+          Serial.println(*lum_data);
+          display.drawLine(0, 32, 43, 32, WHITE);
+          display.drawLine(71, 32, 120, 32, WHITE);
+          display.setCursor(40,34);
+          display.println(F("Lum:"));
+          display.print(*lum_data);
+          display.println(F(" lux"));
+          display.display();
+        }else{
+          Serial.println("Could not acquire luminosity data");
+        }
+        break;
+      default:
+        log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
     }
       
-  if (counter == 10) {  
+  if (counter == 9) {  
       if(!client.connected()){
         Serial.println(F("Connection lost, reconnecting... "));
         reconnect();
