@@ -290,7 +290,7 @@ void callback(char* topic, byte* payload, unsigned int length){
       default:
         log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
     }
-   }else if msg["order"] == "Custom"{
+   }else if (msg["order"] == "Custom"){
     if (screen_mode != Date and screen_mode != Luminosity and screen_mode != Temperature){
       //Si il n y a aps de last_seen ?
       if (!last_seen){
