@@ -76,7 +76,8 @@ B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00
 typedef enum {
   Date,
   Temperature,
-  Luminosity
+  Luminosity,
+  Cusitomized_message
 } enum_mode_print;
 
 /* MAC vars */
@@ -115,6 +116,7 @@ TwoWire I2Cone = TwoWire(0);
 //global variable
 int address_devices[5];
 enum_mode_print screen_mode;
+enum_mode_print last_seen;
 
 float* lum_data;
 float* temp_data;
@@ -171,6 +173,22 @@ void IRAM_ATTR button_Pressed_Change(){
       log_debug(F("LUM ----> DATE\n"));
         screen_mode = Date;
         break;
+      case Customized_message:
+        switch (last_seen){
+          case Date:
+          log_debug(F("Custom ---> TEMP\n"));
+            screen_mode = Temperature;
+            break;
+          case Temperature:
+          log_debug(F("Custom ---> LUM\n"));
+            screen_mode = Luminosity;
+            break;
+          case Luminosity:
+          log_debug(F("Custom ----> DATE\n"));
+            screen_mode = Date;
+            break;
+          }
+        break;
       default:
         log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
     }
@@ -219,11 +237,24 @@ void get_conf(){
 }
 
 void callback(char* topic, byte* payload, unsigned int length){
+  StaticJsonDocument<200> msg;
+  char json[] = (char*)payload;
   log_info(F("\n---------------------\n"));log_info(F("mqtt_callback()"));log_info(F("\n---------------------\n"));
   log_debug(F("[")); log_debug(F(topic)); log_debug(F("]:"));
   if(strncmp(topic,DEFT_TOPIC_CLASS,size_t(sizeof(DEFT_TOPIC_CLASS)))==0){
     log_debug(F("message recevied\n")); 
-   if (strncmp((char*)payload,"Change",length)==0){
+    //if (strncmp((char*)payload,"Change",length)==0){
+    // Deserialize the JSON document
+    DeserializationError error = deserializeJson(msg, json);
+    //TODO CHANGER L'AFFICHAGE
+   // Test if parsing succeeds.
+   if (error) {
+     Serial.print(F("deserializeJson() failed: "));
+     Serial.println(error.f_str());
+     return;
+   }
+   if(msg["order"] == "Change"){
+    
     //TODO CHANGER L'AFFICHAGE
     switch(screen_mode){
       case Date:
@@ -238,10 +269,40 @@ void callback(char* topic, byte* payload, unsigned int length){
       log_debug(F("LUM ----> DATE\n"));
         screen_mode = Date;
         break;
+      case Customized_message:
+        switch (last_seen){
+          case Date:
+          log_debug(F("Custom ---> TEMP\n"));
+            screen_mode = Temperature;
+            break;
+          case Temperature:
+          log_debug(F("Custom ---> LUM\n"));
+            screen_mode = Luminosity;
+            break;
+          case Luminosity:
+          log_debug(F("Custom ----> DATE\n"));
+            screen_mode = Date;
+            break;
+          }
+        break;
       default:
         log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
     }
-   }else{
+   }else if msg["order"] == "Custom"{
+    if (screen_mode != Date and screen_mode != Luminosity and screen_mode != Temperature){
+      //Si il n y a aps de last_seen ?
+      if (!last_seen){
+        last_seen = Date
+      }
+    }
+    else{
+      last_seen = screen_mode;
+    }
+    screen_mode = Customized_message;
+    //Print le message custom
+    counter = 0;
+   }
+   else{
     log_warning(F("Received a non Change Order message"));
    }
   }else{
@@ -250,6 +311,7 @@ void callback(char* topic, byte* payload, unsigned int length){
   log_info(F("\n---------------------\n"));log_info(F("end of mqtt_callback()"));log_info(F("\n---------------------\n"));
   return;
 }
+
 
 void mqtt(){
   log_info(F("\n---------------------\n"));log_info(F("mqtt_init()"));log_info(F("\n---------------------\n"));
@@ -486,8 +548,9 @@ void loop() {
       if(!client.connected()){
         log_warning(F("Connection lost, reconnecting... "));
         reconnect();
-      }   
-      boolean rc = client.publish(DEFT_TOPIC_CLASS, "Change"); 
+      }
+      cmd["order"]="change";   
+      boolean rc = client.publish(DEFT_TOPIC_CLASS, cmd); 
       counter = 0;
   }
   client.loop();
