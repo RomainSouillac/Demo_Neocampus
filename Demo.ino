@@ -77,7 +77,7 @@ typedef enum {
   Date,
   Temperature,
   Luminosity,
-  Cusitomized_message
+  Customized_message
 } enum_mode_print;
 
 /* MAC vars */
@@ -238,6 +238,7 @@ void get_conf(){
 
 void callback(char* topic, byte* payload, unsigned int length){
   StaticJsonDocument<200> msg;
+  //Pas bon pour récuperer l'objet
   char json[] = (char*)payload;
   log_info(F("\n---------------------\n"));log_info(F("mqtt_callback()"));log_info(F("\n---------------------\n"));
   log_debug(F("[")); log_debug(F(topic)); log_debug(F("]:"));
@@ -250,7 +251,8 @@ void callback(char* topic, byte* payload, unsigned int length){
    // Test if parsing succeeds.
    if (error) {
      Serial.print(F("deserializeJson() failed: "));
-     Serial.println(error.f_str());
+     // f_string ou c_string :shrug:
+     Serial.println(error.c_str());
      return;
    }
    if(msg["order"] == "Change"){
