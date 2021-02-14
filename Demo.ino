@@ -451,7 +451,7 @@ void setup() {
   log_info(F("\n---------------------\n"));log_info(F("setup()"));log_info(F("\n---------------------\n"));
   log_debug(F("debug mode enabled\n"));
   delay(1000);
-  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS)) {
+  if(!display.begin(SSD1306_SWITCHCAPVCC, SCREEN_ADDRESS,100000)) {
     log_debug(F("SSD1306 allocation failed"));
     for(;;); // Don't proceed, loop forever
   }
