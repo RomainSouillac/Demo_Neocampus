@@ -40,44 +40,52 @@
 Adafruit_SSD1306 display(128, 64, &Wire, OLED_RESET);
 
 #define NEOCAMPUS_WIDTH 128
-#define NEOCAMPUS_HEIGHT 25
+#define NEOCAMPUS_HEIGHT 34
 
 const unsigned char neOCampus_bmp [] PROGMEM=
 {
-B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000,
-B00000000, B00000000, B00000000, B00000000, B00011000, B00011100, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000,
-B00000000, B00000000, B00000000, B00000000, B01111110, B01111111, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000,
-B00000000, B00000000, B00000000, B00000000, B11111100, B11111111, B11000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000,
-B00000000, B00000000, B00000000, B00000001, B11000001, B11000000, B11000000, B11110000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000001, B11000000,
-B00110011, B11100000, B00111111, B00000011, B10000011, B10000000, B00000011, B11111100, B00010011, B11100011, B11100000, B01001111, B11000001, B10000000, B11000111, B11110000,
-B00110111, B11110000, B01111111, B10000111, B00000111, B00100000, B00000011, B00001110, B00011111, B11110111, B11110000, B01111111, B11100001, B10000000, B11001100, B00110000,
-B00111100, B00111000, B11100001, B11000110, B00000110, B01100000, B00000000, B00000110, B00011100, B00111100, B00111000, B01110000, B01100001, B10000000, B11001100, B00000000,
-B00111000, B00011000, B11000000, B11000110, B00000110, B01100000, B00000000, B00000110, B00011000, B00011000, B00011000, B01100000, B00110001, B10000000, B11001100, B00000000,
-B00110000, B00011000, B11000000, B11101110, B00001110, B01110000, B00000000, B00000110, B00011000, B00011000, B00011000, B01100000, B00110001, B10000000, B11000110, B00000000,
-B00110000, B00011001, B11111111, B11101110, B00001110, B01110000, B00000000, B11111110, B00011000, B00011000, B00011000, B01100000, B00110001, B10000000, B11000011, B11000000,
-B00110000, B00011001, B11111111, B11001110, B00001110, B01110000, B00000011, B11111110, B00011000, B00011000, B00011000, B01100000, B00110001, B10000000, B11000001, B11100000,
-B00110000, B00011001, B11000000, B00001110, B00001110, B01110000, B00000111, B00000110, B00011000, B00011000, B00011000, B01100000, B00110001, B10000000, B11000000, B00110000,
-B00110000, B00011000, B11000000, B00000110, B00000110, B01100000, B00000110, B00000110, B00011000, B00011000, B00011000, B01100000, B00110001, B10000000, B11000000, B00011000,
-B00110000, B00011000, B11000000, B11000110, B00000110, B01100000, B00000110, B00001110, B00011000, B00011000, B00011000, B01100000, B01110001, B10000000, B11000000, B00011000,
-B00110000, B00011000, B11100001, B11000111, B00000100, B11100000, B00000110, B00011110, B00011000, B00011000, B00011000, B01110000, B11100001, B11000011, B11001100, B00011000,
-B00110000, B00011000, B01111111, B10000011, B10000001, B11000000, B00000111, B11110110, B00011000, B00011000, B00011000, B01111111, B11000000, B11111111, B11001110, B00111000,
-B00110000, B00011000, B00111111, B00000001, B11000011, B10000000, B11000011, B11100110, B00011000, B00011000, B00011000, B01101111, B10000000, B01111100, B11000111, B11110000,
-B00000000, B00000000, B00000000, B00000000, B11111111, B00111111, B11000000, B00000000, B00000000, B00000000, B00000000, B01100000, B00000000, B00000000, B00000001, B11000000,
-B00000000, B00000000, B00000000, B00000000, B01111110, B01111111, B10000000, B00000000, B00000000, B00000000, B00000000, B01100000, B00000000, B00000000, B00000000, B00000000,
-B00000000, B00000000, B00000000, B00000000, B00011000, B00011100, B00000000, B00000000, B00000000, B00000000, B00000000, B01100000, B00000000, B00000000, B00000000, B00000000,
-B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B01100000, B00000000, B00000000, B00000000, B00000000,
-B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B01100000, B00000000, B00000000, B00000000, B00000000,
-B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B01100000, B00000000, B00000000, B00000000, B00000000,
-B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000, B00000000
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x06, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x1f, 0x9f, 0xc0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x6f, 0x6f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x70, 0x70, 0x30, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0xc0,
+0x33, 0xe0, 0x1f, 0x80, 0xe0, 0xe0, 0x00, 0x38, 0x13, 0xe3, 0xe0, 0x9f, 0x83, 0x01, 0x87, 0xf0,
+0x37, 0xf0, 0x6f, 0xc1, 0xc1, 0xc8, 0x01, 0xfe, 0x1f, 0xf7, 0xf0, 0xff, 0xc3, 0x01, 0x8c, 0x30,
+0x36, 0x38, 0x70, 0xe1, 0x81, 0x98, 0x01, 0x87, 0x1c, 0x36, 0x38, 0xe0, 0xc3, 0x01, 0x8c, 0x00,
+0x38, 0x18, 0x60, 0x61, 0x81, 0x98, 0x00, 0x03, 0x18, 0x18, 0x18, 0xc0, 0x63, 0x01, 0x8c, 0x00,
+0x30, 0x18, 0x60, 0x63, 0x83, 0x9c, 0x00, 0x03, 0x18, 0x18, 0x18, 0xc0, 0x63, 0x01, 0x86, 0x00,
+0x30, 0x18, 0xff, 0xf3, 0x83, 0x9c, 0x00, 0x7f, 0x18, 0x18, 0x18, 0xc0, 0x63, 0x01, 0x83, 0xc0,
+0x30, 0x18, 0xff, 0xe3, 0x83, 0x9c, 0x01, 0xff, 0x18, 0x18, 0x18, 0xc0, 0x63, 0x01, 0x81, 0xe0,
+0x30, 0x18, 0xe0, 0x03, 0x83, 0x9c, 0x03, 0x83, 0x18, 0x18, 0x18, 0xc0, 0x63, 0x01, 0x80, 0x30,
+0x30, 0x18, 0x60, 0x01, 0x81, 0x98, 0x03, 0x03, 0x18, 0x18, 0x18, 0xc0, 0x63, 0x01, 0x80, 0x18,
+0x30, 0x18, 0x60, 0x61, 0x81, 0x98, 0x03, 0x07, 0x18, 0x18, 0x18, 0xc0, 0xe3, 0x01, 0x80, 0x18,
+0x30, 0x18, 0x70, 0xe1, 0xc1, 0x38, 0x03, 0x0f, 0x18, 0x18, 0x18, 0xe1, 0xc3, 0x87, 0x8c, 0x18,
+0x30, 0x18, 0x6f, 0xc0, 0xe0, 0x70, 0x03, 0xfb, 0x18, 0x18, 0x18, 0xff, 0x81, 0xff, 0x8e, 0x38,
+0x30, 0x18, 0x1f, 0x80, 0x70, 0xe0, 0x31, 0xf3, 0x18, 0x18, 0x18, 0xdf, 0x00, 0xf9, 0x87, 0xf0,
+0x00, 0x00, 0x00, 0x00, 0x6f, 0x6f, 0xf0, 0x00, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x00, 0x01, 0xc0,
+0x00, 0x00, 0x00, 0x00, 0x1f, 0x9f, 0xe0, 0x00, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x06, 0x07, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xc0, 0x00, 0x00, 0x00, 0x00,
+0x3f, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xff, 0xfe, 0xdf, 0xff, 0xff, 0xff, 0xf8,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf8, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x3c, 0x44, 0x01, 0x11, 0xc0, 0x0f, 0x3e, 0x38, 0x89, 0xf1, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x22, 0x44, 0x01, 0xb2, 0x20, 0x10, 0x08, 0x44, 0xd9, 0x01, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x22, 0x28, 0x01, 0x50, 0x20, 0x10, 0x08, 0x44, 0xa9, 0x01, 0x54, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x3c, 0x10, 0x01, 0x11, 0xc0, 0x0e, 0x08, 0x7c, 0x89, 0xc1, 0x64, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x22, 0x10, 0x01, 0x12, 0x00, 0x01, 0x08, 0x44, 0x89, 0x01, 0x54, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x22, 0x10, 0x01, 0x12, 0x00, 0x01, 0x08, 0x44, 0x89, 0x01, 0x04, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x3c, 0x10, 0x01, 0x13, 0xe0, 0x1e, 0x3e, 0x44, 0x89, 0xf0, 0xf8, 0x00, 0x00, 0x00, 0x00, 0x00,
+0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00
 };
-
 
 //enum mode screen
 typedef enum {
   Date,
   Temperature,
   Luminosity,
-  customized_message
+  Customized_message
 } enum_mode_print;
 
 /* MAC vars */
@@ -173,7 +181,7 @@ void IRAM_ATTR button_Pressed_Change(){
       log_debug(F("LUM ----> DATE\n"));
         screen_mode = Date;
         break;
-      case customized_message:
+      case Customized_message:
         switch (last_seen){
           case Date:
           log_debug(F("custom ---> TEMP\n"));
@@ -253,7 +261,7 @@ void callback(char* topic, byte* payload, unsigned int length){
      Serial.println(error.c_str());
      return;
    }
-   //log_debug(F("payload received: ["));log_debug(msg["order"]);log_debug(F("]\n"));
+   //log_debug(F("payload received: ["));msg.printTo(Serial);log_debug(F("]\n"));
    if(msg["order"] == "change"){ 
     //TODO CHANGER L'AFFICHAGE
     switch(screen_mode){
@@ -269,7 +277,7 @@ void callback(char* topic, byte* payload, unsigned int length){
       log_debug(F("LUM ----> DATE\n"));
         screen_mode = Date;
         break;
-      case customized_message:
+      case Customized_message:
         switch (last_seen){
           case Date:
           log_debug(F("custom ---> TEMP\n"));
@@ -289,18 +297,14 @@ void callback(char* topic, byte* payload, unsigned int length){
         log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
     }
    }else if (msg["order"] == "custom"){
-    if (screen_mode != Date and screen_mode != Luminosity and screen_mode != Temperature){
-      //Si il n y a aps de last_seen ?
-      if (!last_seen){
-        last_seen = Date;
-      }
-    }
-    else{
-      last_seen = screen_mode;
-    }
-    screen_mode = customized_message;
+    
+      const char* str_custom_msg = msg["value"];
+      log_debug(str_custom_msg); log_debug("\n");
+      printCustomMessage(str_custom_msg);
     //Print le message custom
     counter = 0;
+    last_seen = screen_mode;
+    screen_mode = Customized_message;
    }
    else{
     log_warning(F("Received a non Change Order message"));
@@ -355,10 +359,20 @@ void reconnect(){
   log_info(F("\n---------------------\n"));log_info(F("end of mqtt_reconnect()"));log_info(F("\n---------------------\n"));
   return;
 }
-
+void printCustomMessage(const char *str){
+  log_info(F("\n---------------------\n"));log_info(F("print_custom_message()"));log_info(F("\n---------------------\n"));
+  log_debug(str); log_debug("\n");
+  display.clearDisplay();
+  display.setCursor(0,0);
+  display.print(str);
+  display.display();
+  log_info(F("\n---------------------\n"));log_info(F("end of print_custom_message()"));log_info(F("\n---------------------\n"));
+  return;
+}
 void printLocalTime(){
   char str_hms[13];
   struct tm timeinfo;
+  display.clearDisplay();
   if(!getLocalTime(&timeinfo)){
     Serial.println("Failed to obtain time");
     return;
@@ -474,11 +488,14 @@ void setup() {
   // SSD1306_SWITCHCAPVCC = generate display voltage from 3.3V internally
   
   screen_mode = Date;
+  last_seen = Date;
   configTime(3600, 3600, ntpServer);
   temp_data = (float *)malloc(sizeof(float));
   lum_data = (float *)malloc(sizeof(float));
+ // str_custom_msg = (char *)malloc(sizeof(char)*30);
+  
   *lum_data = 0.0;
-  *temp_data=0.0;
+  *temp_data = 0.0;
   log_debug(F("\n---------------------\n"));log_debug(F("Fetching data"));log_debug(F("\n---------------------\n"));
   while(!lumSensor.acquire(lum_data)){
     log_debug(F("\nluminosity init value not acquired\n"));
@@ -502,7 +519,6 @@ void loop() {
   char msgToPublish[256];
   counter++;
   delay(100);
-  display.clearDisplay();
   switch(screen_mode){
     case Date:
       printLocalTime();
@@ -535,6 +551,8 @@ void loop() {
         display.print(*lum_data);
         display.println(F(" lux"));
       break;
+    case Customized_message:
+    break;
     default:
       log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
   }
