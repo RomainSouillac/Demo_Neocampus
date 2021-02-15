@@ -77,7 +77,7 @@ typedef enum {
   Date,
   Temperature,
   Luminosity,
-  Customized_message
+  customized_message
 } enum_mode_print;
 
 /* MAC vars */
@@ -173,18 +173,18 @@ void IRAM_ATTR button_Pressed_Change(){
       log_debug(F("LUM ----> DATE\n"));
         screen_mode = Date;
         break;
-      case Customized_message:
+      case customized_message:
         switch (last_seen){
           case Date:
-          log_debug(F("Custom ---> TEMP\n"));
+          log_debug(F("custom ---> TEMP\n"));
             screen_mode = Temperature;
             break;
           case Temperature:
-          log_debug(F("Custom ---> LUM\n"));
+          log_debug(F("custom ---> LUM\n"));
             screen_mode = Luminosity;
             break;
           case Luminosity:
-          log_debug(F("Custom ----> DATE\n"));
+          log_debug(F("custom ----> DATE\n"));
             screen_mode = Date;
             break;
           }
@@ -243,19 +243,18 @@ void callback(char* topic, byte* payload, unsigned int length){
   log_debug(F("[")); log_debug(F(topic)); log_debug(F("]:"));
   if(strncmp(topic,DEFT_TOPIC_CLASS,size_t(sizeof(DEFT_TOPIC_CLASS)))==0){
     log_debug(F("message recevied\n")); 
-    //if (strncmp((char*)payload,"Change",length)==0){
     // Deserialize the JSON document
     DeserializationError error = deserializeJson(msg,payload,length);
     //TODO CHANGER L'AFFICHAGE
    // Test if parsing succeeds.
    if (error) {
-     Serial.print(F("deserializeJson() failed: "));
+     log_error(F("deserializeJson() failed: "));
      // f_string ou c_string :shrug:
      Serial.println(error.c_str());
      return;
    }
-   if(msg["order"] == "Change"){
-    
+   //log_debug(F("payload received: ["));log_debug(msg["order"]);log_debug(F("]\n"));
+   if(msg["order"] == "change"){ 
     //TODO CHANGER L'AFFICHAGE
     switch(screen_mode){
       case Date:
@@ -270,18 +269,18 @@ void callback(char* topic, byte* payload, unsigned int length){
       log_debug(F("LUM ----> DATE\n"));
         screen_mode = Date;
         break;
-      case Customized_message:
+      case customized_message:
         switch (last_seen){
           case Date:
-          log_debug(F("Custom ---> TEMP\n"));
+          log_debug(F("custom ---> TEMP\n"));
             screen_mode = Temperature;
             break;
           case Temperature:
-          log_debug(F("Custom ---> LUM\n"));
+          log_debug(F("custom ---> LUM\n"));
             screen_mode = Luminosity;
             break;
           case Luminosity:
-          log_debug(F("Custom ----> DATE\n"));
+          log_debug(F("custom ----> DATE\n"));
             screen_mode = Date;
             break;
           }
@@ -289,7 +288,7 @@ void callback(char* topic, byte* payload, unsigned int length){
       default:
         log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
     }
-   }else if (msg["order"] == "Custom"){
+   }else if (msg["order"] == "custom"){
     if (screen_mode != Date and screen_mode != Luminosity and screen_mode != Temperature){
       //Si il n y a aps de last_seen ?
       if (!last_seen){
@@ -299,7 +298,7 @@ void callback(char* topic, byte* payload, unsigned int length){
     else{
       last_seen = screen_mode;
     }
-    screen_mode = Customized_message;
+    screen_mode = customized_message;
     //Print le message custom
     counter = 0;
    }
@@ -518,14 +517,10 @@ void loop() {
       if(counter==1){
         if(tempSensor.acquire(temp_data)){
           log_debug(F("\nTemperature :"));log_debug(*temp_data);log_debug(F(" C\n"));
-          //Serial.print(f, 4); Serial.println("*F.");
         }
       }
         display.print(*temp_data);
         display.println(F(" C"));
-      //}else{
-        //display.println(F("no data"));
-      //}
       break;
       
     case Luminosity:
@@ -539,9 +534,6 @@ void loop() {
       }
         display.print(*lum_data);
         display.println(F(" lux"));
-      //}else{
-       // display.println(F("no data"));
-      //}
       break;
     default:
       log_error(F("\n[setupLed] unknwown screen_mode ?!?!"));
