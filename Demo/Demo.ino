@@ -304,7 +304,11 @@ void callback(char* topic, byte* payload, unsigned int length){
       printCustomMessage(str_custom_msg);
     //Print le message custom
     counter = 0;
-    last_seen = screen_mode;
+    if(screen_mode!=Customized_message){
+      // if we receive 2 consecutive custom message
+      //we need to ignore the last_seen update or it will loop the last custom message
+      last_seen = screen_mode;
+    }
     screen_mode = Customized_message;
    }
    else{
@@ -344,17 +348,28 @@ void mqtt(){
 }
 
 void reconnect(){
+  int cpt;
   log_info(F("\n---------------------\n"));log_info(F("mqtt_reconnect()"));log_info(F("\n---------------------\n"));
+  log_debug(F("MQTT client, reconnecting...\n"));
+  log_error(F("MQTT client failed, rc="));log_error(client.state());log_error(F(" try again in 5 seconds\n"));
   while(!client.connected()){
-    log_debug(F("MQTT client, reconnecting...\n"));
     if(client.connect(DEFT_SERVER)){
-      log_debug(F("MQTT client reconnected\n"));
-      client.publish(DEFT_TOPIC,"hello world");
+      log_debug(F("MQTT client reconnected!\n"));
+      client.publish(DEFT_TOPIC,"reconnected");
       client.subscribe(DEFT_TOPIC_CLASS);
     }else{
-      log_error(F("MQTT client failed, rc="));log_error(client.state());log_error(F(" try again in 5 seconds\n"));
       // Wait 5 seconds before retrying
-      delay(5000);
+      for(cpt=50; cpt>0;cpt--){
+        delay(100);
+        printLocalTime();
+        display.println("MQTT err..");
+        display.print("status: ");
+        display.println(client.state());
+        display.print("try in "); 
+        display.print(cpt/10);
+        display.println("s");
+        display.display();
+      }
     }
   }
   log_info(F("\n---------------------\n"));log_info(F("end of mqtt_reconnect()"));log_info(F("\n---------------------\n"));
@@ -363,6 +378,7 @@ void reconnect(){
 void printCustomMessage(const char *str){
   log_info(F("\n---------------------\n"));log_info(F("print_custom_message()"));log_info(F("\n---------------------\n"));
   log_debug(str); log_debug("\n");
+  
   display.clearDisplay();
   display.setCursor(0,0);
   display.print(str);
@@ -381,13 +397,16 @@ void printLocalTime(){
   strftime(str_hms, 13, "%H:%M:%S",&timeinfo);
   display.clearDisplay();
   display.setCursor(15, 0);
-  display.println(str_hms);
-  display.drawLine(0, 24, 120, 24, WHITE);
-  //display.drawLine(71, 28, 120, 28, WHITE);
-  display.setCursor(40, 34);
+  display.println(str_hms);  
   return;
 }
 
+void printLine(){
+  display.drawLine(0, 24, 120, 24, WHITE);
+  display.setCursor(40, 34);
+  return;
+}
+  
 void printLocalDate()
 {
   char str_Ddm[11];
@@ -523,6 +542,7 @@ void loop() {
   switch(screen_mode){
     case Date:
       printLocalTime();
+      printLine();
       printLocalDate();
       //Mettre a jour la date et l'afficher
       break;
@@ -530,6 +550,7 @@ void loop() {
       //Mettre a jour la temperature et l'afficher
       // Read and print out the temperature, also shows the resolution mode used for reading.
       printLocalTime();
+      printLine();
       display.println(F("Temp:"));  
       if(counter==1){
         if(tempSensor.acquire(temp_data)){
@@ -543,6 +564,7 @@ void loop() {
     case Luminosity:
       //Mettre a jour la luminosité et l'afficher
       printLocalTime();
+      printLine();
       display.println(F("Lum:"));
       if(counter==1){
         if(lumSensor.acquire(lum_data)){
